@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Article, NewsSource, TopicKeywords } from './types'
 import { NEWS_SOURCES } from './data/newsSources'
 import { TOPICS, TIME_OPTIONS } from './data/topics'
+import { fetchArticlesByTopic, searchAllSources } from './services/newsApiService'
 import { fetchMultipleFeeds } from './services/rssService'
 import { filterAndProcessArticles, getOpposingPerspectives } from './services/filterService'
 import { feedCache } from './services/cacheService'
@@ -30,6 +31,7 @@ interface AppState {
 }
 
 function App() {
+  const useNewsAPI = import.meta.env.VITE_USE_NEWS_API === 'true';
   const [state, setState] = useState<AppState>({
     selectedSources: [],
     selectedTopic: '',
@@ -62,86 +64,155 @@ function App() {
       results: null,
     }))
 
-    // Add debugging
-    console.log('🚀 Starting analysis...')
-    console.log(`📊 Selected sources: ${state.selectedSources.join(', ')}`)
-    console.log(`📋 Selected topic: ${state.selectedTopic}`)
-    console.log(`⏰ Selected timeframe: ${state.selectedTimeframe} days`)
-
-    try {
-      // Get all relevant news sources (user selected + others for comparison)
-      const userSourcesData = NEWS_SOURCES.filter(source => 
-        state.selectedSources.includes(source.id)
-      )
-      
-      // Get all sources for comprehensive analysis
-      const allSourcesData = NEWS_SOURCES
-
-      // Check cache first
-      const cachedArticles: Article[] = []
-      const sourcesToFetch: NewsSource[] = []
-
-      for (const source of allSourcesData) {
-        const cached = feedCache.getCachedFeed(source.id)
-        if (cached) {
-          cachedArticles.push(...cached)
-        } else {
-          sourcesToFetch.push(source)
+    if (useNewsAPI) {
+      // Use NewsAPI implementation
+      try {
+        // Get selected topic data
+        const topicData = TOPICS.find(t => t.topic === state.selectedTopic)
+        if (!topicData) {
+          throw new Error('Selected topic not found')
         }
-      }
 
-      // Fetch missing feeds
-      let fetchedArticles: Article[] = []
-      if (sourcesToFetch.length > 0) {
-        const feedResults = await fetchMultipleFeeds(sourcesToFetch)
+        // Check cache first
+        const cacheKey = `newsapi-${state.selectedTopic}-${state.selectedSources.join(',')}-${state.selectedTimeframe}`;
+        const cached = feedCache.getCachedFeed(cacheKey);
         
-        // Process results and update cache
-        for (const result of feedResults) {
-          if (result.articles.length > 0 && !result.error) {
-            const source = sourcesToFetch.find(s => s.name === result.source)
-            if (source) {
-              feedCache.setCachedFeed(source.id, result.articles)
-              fetchedArticles.push(...result.articles)
+        let allArticles: Article[] = [];
+        
+        if (cached) {
+          allArticles = cached;
+        } else {
+          // Fetch articles from user's selected sources
+          const userArticles = await fetchArticlesByTopic(
+            state.selectedTopic,
+            topicData.keywords,
+            state.selectedSources,
+            state.selectedTimeframe
+          );
+          
+          // Fetch articles from all other sources for comparison
+          const opposingSourceArticles = await searchAllSources(
+            topicData.keywords,
+            state.selectedTimeframe,
+            state.selectedSources.map(id => {
+              const source = NEWS_SOURCES.find(s => s.id === id);
+              return source?.name || '';
+            })
+          );
+          
+          allArticles = [...userArticles, ...opposingSourceArticles];
+          
+          // Cache the results
+          feedCache.setCachedFeed(cacheKey, allArticles);
+        }
+
+        // Filter and process articles (remove duplicates, sort by date)
+        const filteredArticles = filterAndProcessArticles(
+          allArticles,
+          topicData,
+          state.selectedTimeframe,
+          20
+        );
+
+        // Separate user articles from opposing perspectives
+        const { userArticles, opposingArticles } = getOpposingPerspectives(
+          state.selectedSources.map(id => {
+            const source = NEWS_SOURCES.find(s => s.id === id);
+            return source?.name || '';
+          }),
+          filteredArticles
+        );
+
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          results: { userArticles, opposingArticles },
+        }))
+      } catch (error) {
+        console.error('Analysis failed:', error)
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: error instanceof Error ? error.message : 'Analysis failed',
+        }))
+      }
+    } else {
+      // Use RSS implementation
+      try {
+        // Get all relevant news sources (user selected + others for comparison)
+        const userSourcesData = NEWS_SOURCES.filter(source => 
+          state.selectedSources.includes(source.id)
+        )
+        
+        // Get all sources for comprehensive analysis
+        const allSourcesData = NEWS_SOURCES
+
+        // Check cache first
+        const cachedArticles: Article[] = []
+        const sourcesToFetch: NewsSource[] = []
+
+        for (const source of allSourcesData) {
+          const cached = feedCache.getCachedFeed(source.id)
+          if (cached) {
+            cachedArticles.push(...cached)
+          } else {
+            sourcesToFetch.push(source)
+          }
+        }
+
+        // Fetch missing feeds
+        let fetchedArticles: Article[] = []
+        if (sourcesToFetch.length > 0) {
+          const feedResults = await fetchMultipleFeeds(sourcesToFetch)
+          
+          // Process results and update cache
+          for (const result of feedResults) {
+            if (result.articles.length > 0 && !result.error) {
+              const source = sourcesToFetch.find(s => s.name === result.source)
+              if (source) {
+                feedCache.setCachedFeed(source.id, result.articles)
+                fetchedArticles.push(...result.articles)
+              }
             }
           }
         }
+
+        // Combine cached and fetched articles
+        const allArticles = [...cachedArticles, ...fetchedArticles]
+
+        // Get selected topic data
+        const topicData = TOPICS.find(t => t.topic === state.selectedTopic)
+        if (!topicData) {
+          throw new Error('Selected topic not found')
+        }
+
+        // Filter and process articles
+        const filteredArticles = filterAndProcessArticles(
+          allArticles,
+          topicData,
+          state.selectedTimeframe,
+          20 // Max 20 articles per source
+        )
+
+        // Separate user articles from opposing perspectives
+        const { userArticles, opposingArticles } = getOpposingPerspectives(
+          state.selectedSources,
+          filteredArticles
+        )
+
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          results: { userArticles, opposingArticles },
+        }))
+      } catch (error) {
+        console.error('Analysis failed:', error)
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: error instanceof Error ? error.message : 'Analysis failed',
+        }))
       }
-
-      // Combine cached and fetched articles
-      const allArticles = [...cachedArticles, ...fetchedArticles]
-
-      // Get selected topic data
-      const topicData = TOPICS.find(t => t.topic === state.selectedTopic)
-      if (!topicData) {
-        throw new Error('Selected topic not found')
-      }
-
-      // Filter and process articles
-      const filteredArticles = filterAndProcessArticles(
-        allArticles,
-        topicData,
-        state.selectedTimeframe,
-        20 // Max 20 articles per source
-      )
-
-      // Separate user articles from opposing perspectives
-      const { userArticles, opposingArticles } = getOpposingPerspectives(
-        state.selectedSources,
-        filteredArticles
-      )
-
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        results: { userArticles, opposingArticles },
-      }))
-    } catch (error) {
-      console.error('Analysis failed:', error)
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Analysis failed',
-      }))
     }
   }
 

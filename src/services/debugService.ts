@@ -80,3 +80,25 @@ export const debugTopicFiltering = () => {
     })
   })
 }
+
+export const debugNewsAPI = async () => {
+  console.log('🔍 Testing NewsAPI integration...');
+  
+  // Check API status
+  const status = await checkAPIStatus();
+  console.log('API Status:', status);
+  
+  // Test topic search
+  try {
+    const articles = await fetchArticlesByTopic(
+      'Climate Change',
+      ['climate', 'global warming'],
+      ['cnn', 'bbc'],
+      7
+    );
+    console.log(`✅ Found ${articles.length} articles`);
+    console.log('Sample article:', articles[0]);
+  } catch (error) {
+    console.error('❌ NewsAPI test failed:', error);
+  }
+};

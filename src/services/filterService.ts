@@ -82,18 +82,20 @@ export const groupArticlesByPoliticalLean = (articles: Article[]) => {
 }
 
 export const getOpposingPerspectives = (
-  userSources: string[],
+  userSourceNames: string[],
   allArticles: Article[]
 ): { userArticles: Article[]; opposingArticles: Article[] } => {
+  const userSourcesLower = userSourceNames.map(s => s.toLowerCase());
+  
   const userArticles = allArticles.filter((article) =>
-    userSources.includes(article.source)
-  )
+    userSourcesLower.includes(article.source.toLowerCase())
+  );
 
   const opposingArticles = allArticles.filter((article) =>
-    !userSources.includes(article.source)
-  )
+    !userSourcesLower.includes(article.source.toLowerCase())
+  );
 
-  return { userArticles, opposingArticles }
+  return { userArticles, opposingArticles };
 }
 
 export const calculateTopicRelevance = (

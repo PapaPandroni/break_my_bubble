@@ -1,10 +1,11 @@
 export interface NewsSource {
-  id: string
-  name: string
-  rssUrl: string
-  politicalLean: 'left' | 'center' | 'right'
-  credibility: number
-  website: string
+  id: string;
+  name: string;
+  rssUrl: string;
+  newsApiId?: string; // Add this field
+  politicalLean: 'left' | 'center' | 'right';
+  credibility: number;
+  website: string;
 }
 
 export interface Article {
@@ -39,4 +40,27 @@ export interface CachedFeed {
 
 export interface FeedCache {
   [sourceId: string]: CachedFeed
+}
+
+// NewsAPI specific types
+export interface NewsAPIResponse {
+  status: string;
+  totalResults: number;
+  articles: NewsAPIArticle[];
+  code?: string;
+  message?: string;
+}
+
+export interface NewsAPIArticle {
+  source: {
+    id: string | null;
+    name: string;
+  };
+  author: string | null;
+  title: string;
+  description: string | null;
+  url: string;
+  urlToImage: string | null;
+  publishedAt: string;
+  content: string | null;
 }
