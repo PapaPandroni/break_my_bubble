@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RSS Feed Debug Tool</title>
+</head>
+<body>
+    <h1>RSS Feed Debug Tool</h1>
+    <button onclick="testFeeds()">Test RSS Feeds</button>
+    <div id="results"></div>
+
+    <script>
+        async function testFeeds() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing feeds...</p>';
+            
+            const feeds = [
+                'https://feeds.reuters.com/reuters/topNews',
+                'http://rss.cnn.com/rss/edition.rss',
+                'http://feeds.bbci.co.uk/news/rss.xml'
+            ];
+            
+            for (const feed of feeds) {
+                try {
+                    console.log(`Testing feed: ${feed}`);
+                    
+                    // Test direct access (will likely fail due to CORS)
+                    try {
+                        const directResponse = await fetch(feed);
+                        console.log(`Direct access to ${feed}: ${directResponse.status}`);
+                    } catch (e) {
+                        console.log(`Direct access to ${feed} failed (expected): ${e.message}`);
+                    }
+                    
+                    // Test with CORS proxy
+                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(feed)}`;
+                    console.log(`Trying proxy: ${proxyUrl}`);
+                    
+                    const proxyResponse = await fetch(proxyUrl);
+                    const data = await proxyResponse.json();
+                    
+                    if (data.contents) {
+                        console.log(`✅ ${feed}: Got ${data.contents.length} characters`);
+                        results.innerHTML += `<p>✅ ${feed}: Success (${data.contents.length} chars)</p>`;
+                    } else {
+                        console.log(`❌ ${feed}: No contents`, data);
+                        results.innerHTML += `<p>❌ ${feed}: No contents - ${JSON.stringify(data)}</p>`;
+                    }
+                } catch (error) {
+                    console.log(`❌ ${feed}: Error - ${error.message}`);
+                    results.innerHTML += `<p>❌ ${feed}: Error - ${error.message}</p>`;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
