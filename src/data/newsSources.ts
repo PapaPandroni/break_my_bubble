@@ -24,6 +24,7 @@ export const NEWS_SOURCES: NewsSource[] = [
     id: 'guardian',
     name: 'The Guardian',
     rssUrl: 'https://www.theguardian.com/rss',
+    // Note: Guardian UK may not be available in NewsAPI, will be validated at runtime
     newsApiId: 'the-guardian-uk',
     politicalLean: 'left',
     credibility: 0.8,
@@ -33,7 +34,7 @@ export const NEWS_SOURCES: NewsSource[] = [
     id: 'npr',
     name: 'NPR',
     rssUrl: 'https://feeds.npr.org/1001/rss.xml',
-    newsApiId: 'npr',
+    // Note: NPR may not be available in NewsAPI, using RSS as fallback
     politicalLean: 'center',
     credibility: 0.9,
     website: 'npr.org',

@@ -1,0 +1,179 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Development Commands
+
+```bash
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Lint code
+npm run lint
+
+# Preview production build
+npm run preview
+
+# Test NewsAPI integration
+npm run test:newsapi
+```
+
+## Project Status
+
+**Version**: 2.0 - Enhanced NewsAPI Integration Complete ✅  
+**Last Updated**: January 2025  
+**Build Status**: ✅ Production Ready  
+**Features**: 100% NewsAPI feature set implemented
+
+## Architecture Overview
+
+BreakMyBubble is a React + TypeScript news analysis app that helps users discover opposing perspectives by comparing their preferred news sources against others. The app supports both RSS feeds and NewsAPI as data sources, with comprehensive multi-language and advanced filtering capabilities.
+
+### Core Components Structure
+
+- **App.tsx**: Main application with dual data source support and enhanced NewsAPI features
+- **Components**: 15+ modular UI components including advanced selectors and filters
+- **Services**: Business logic layer with comprehensive NewsAPI integration
+- **Data**: Static configuration for news sources, topics, and language mappings
+
+### Data Source Architecture
+
+The app supports two data fetching strategies controlled by the `VITE_USE_NEWS_API` environment variable:
+
+**RSS Mode (Basic)**: 
+- Fetches from RSS feeds via CORS proxy
+- Uses TimeSlider for date selection
+- Limited to English sources
+- Static source configuration
+
+**NewsAPI Mode (Advanced)**:
+- Uses NewsAPI.org with full feature set
+- Dynamic source fetching with 54 countries
+- 14 language support with native names
+- Advanced filtering (country, language, domain, sort options)
+- Custom date range picker
+- Article images, author info, and content previews
+- Pagination support
+
+### Enhanced Components (NewsAPI Mode)
+
+- **LanguageSelector**: 14 languages with flags and native names, search functionality
+- **CountrySelector**: 54 countries with flags, multi-selection up to 3 countries  
+- **SortSelector**: Sort by relevancy, publishedAt, or popularity
+- **DateRangePicker**: Custom date ranges or preset options (replaces TimeSlider)
+- **Enhanced ResultsDisplay**: Article images, author info, content previews
+
+### Key Services
+
+- **newsApiService.ts**: Complete NewsAPI integration with pagination, sorting, domain filtering
+- **dynamicSourceService.ts**: Dynamic source fetching with country/language filtering  
+- **rssService.ts**: RSS feed parsing with CORS proxy (fallback mode)
+- **filterService.ts**: Article filtering and opposing perspective logic
+- **cacheService.ts**: 30-minute local storage caching system
+- **debugService.ts**: Development debugging utilities with NewsAPI testing
+
+### News Source Configuration
+
+**Static Sources** (`/src/data/newsSources.ts`):
+- RSS URL for RSS mode
+- NewsAPI ID for API mode  
+- Political lean classification (left/center/right)
+- Credibility scoring
+
+**Dynamic Sources** (NewsAPI Mode):
+- Fetched from NewsAPI `/sources` endpoint
+- Filtered by language, country, category
+- Automatically classified for political lean
+- 24-hour caching with fallback to static sources
+
+### State Management
+
+Uses React hooks with enhanced AppState interface:
+- Source selection (1-5 sources) with dynamic filtering
+- Multi-language selection (up to 5 languages)
+- Multi-country filtering (up to 3 countries)
+- Sort preferences (relevancy/date/popularity)
+- Custom date ranges or preset timeframes
+- Topic filtering (5 predefined topics)
+- Results display with enhanced article data
+
+### NewsAPI Features Implemented ✅
+
+**Core Integration**:
+- ✅ Both `/everything` and `/sources` endpoints
+- ✅ Comprehensive error handling and rate limiting  
+- ✅ API key validation with graceful fallbacks
+
+**Search Parameters**:
+- ✅ Query building with keyword optimization
+- ✅ Source filtering with validation
+- ✅ Language filtering (14 languages)
+- ✅ Date range filtering (custom + presets)
+- ✅ Sort by relevancy/publishedAt/popularity
+- ✅ Domain include/exclude filtering
+- ✅ Pagination support (page/pageSize)
+
+**Advanced Features**:
+- ✅ Dynamic source discovery and filtering
+- ✅ Country-based source filtering (54 countries)
+- ✅ Political lean classification with confidence scoring
+- ✅ Article images and author information
+- ✅ Content previews where available
+- ✅ Comprehensive caching strategy
+
+### Development Features
+
+When `import.meta.env.DEV` is true, debug buttons are available for:
+- RSS feed testing
+- Topic filtering validation  
+- NewsAPI integration testing
+- Source validation and API status
+- Cache management and clearing
+- Demo mode with mock data
+
+### Environment Variables
+
+**Required for NewsAPI Mode**:
+- `VITE_USE_NEWS_API=true`: Enables NewsAPI mode
+- `VITE_NEWS_API_KEY=your_key`: Your NewsAPI.org API key
+
+**Optional**:
+- `VITE_USE_NEWS_API=false` or unset: Uses RSS mode (basic features)
+
+### Technology Stack
+
+- React 18 + TypeScript (100% type coverage)
+- Vite build system with optimized production builds
+- Tailwind CSS for responsive styling
+- Native Fetch API with comprehensive error handling
+- DOMParser for RSS parsing (fallback mode)
+- Advanced date handling and internationalization
+
+### Setup Instructions
+
+**RSS Mode (Basic)**:
+1. `npm install`
+2. `npm run dev`
+3. No additional configuration needed
+
+**NewsAPI Mode (Full Features)**:
+1. Get free API key from [newsapi.org/register](https://newsapi.org/register)  
+2. Create `.env` file:
+   ```
+   VITE_USE_NEWS_API=true
+   VITE_NEWS_API_KEY=your_api_key_here
+   ```
+3. `npm install && npm run dev`
+4. Enjoy full multi-language, multi-country news analysis!
+
+### Error Handling
+
+The app includes comprehensive error handling:
+- ✅ Graceful API key validation
+- ✅ Automatic fallback to RSS mode when NewsAPI fails  
+- ✅ Clear user guidance for configuration issues
+- ✅ Network error recovery with retry options
+- ✅ Loading states and user feedback throughout

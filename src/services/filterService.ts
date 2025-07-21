@@ -105,7 +105,7 @@ export const calculateTopicRelevance = (
   const normalizedKeywords = topicKeywords.keywords.map(normalizeKeyword)
   const titleLower = normalizeKeyword(article.title)
   const descriptionLower = normalizeKeyword(article.description)
-  const combinedText = `${titleLower} ${descriptionLower}`
+  // const combinedText = `${titleLower} ${descriptionLower}`
 
   let relevanceScore = 0
   let keywordMatches = 0

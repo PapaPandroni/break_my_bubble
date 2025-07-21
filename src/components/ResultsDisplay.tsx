@@ -37,50 +37,87 @@ function ArticleCard({ article }: ArticleCardProps) {
   }
 
   return (
-    <article className={`border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow ${getPoliticalLeanStyles(article.sourceLean)}`}>
-      <header className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-2">
-          <span className={`px-2 py-1 text-xs font-medium rounded border ${getPoliticalLeanBadge(article.sourceLean)}`}>
-            {article.source}
-          </span>
-          <span className="text-xs text-gray-500 capitalize">
-            {article.sourceLean}
-          </span>
+    <article className={`border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow ${getPoliticalLeanStyles(article.sourceLean)}`}>
+      {/* Article Image */}
+      {article.imageUrl && (
+        <div className="aspect-w-16 aspect-h-9">
+          <img
+            src={article.imageUrl}
+            alt={article.title}
+            className="w-full h-48 object-cover"
+            onError={(e) => {
+              // Hide image if it fails to load
+              e.currentTarget.style.display = 'none';
+            }}
+          />
         </div>
-        <time className="text-xs text-gray-500" dateTime={article.pubDate}>
-          {formatRelativeTime(article.pubDate)}
-        </time>
-      </header>
+      )}
 
-      <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-gray-900 leading-tight">
-          <a
-            href={article.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            {article.title}
-          </a>
-        </h3>
+      <div className="p-4">
+        <header className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-2">
+            <span className={`px-2 py-1 text-xs font-medium rounded border ${getPoliticalLeanBadge(article.sourceLean)}`}>
+              {article.source}
+            </span>
+            <span className="text-xs text-gray-500 capitalize">
+              {article.sourceLean}
+            </span>
+          </div>
+          <time className="text-xs text-gray-500" dateTime={article.pubDate}>
+            {formatRelativeTime(article.pubDate)}
+          </time>
+        </header>
 
-        {article.description && (
-          <p className="text-gray-600 text-sm leading-relaxed">
-            {truncateText(article.description, 200)}
-          </p>
-        )}
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+            <a
+              href={article.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              {article.title}
+            </a>
+          </h3>
 
-        <div className="flex items-center justify-between pt-2">
-          <a
-            href={article.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm font-medium text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Read full article →
-          </a>
-          <div className="text-xs text-gray-400">
-            External link
+          {/* Author */}
+          {article.author && (
+            <div className="flex items-center text-sm text-gray-500">
+              <span className="mr-1">✍️</span>
+              <span>By {article.author}</span>
+            </div>
+          )}
+
+          {article.description && (
+            <p className="text-gray-600 text-sm leading-relaxed">
+              {truncateText(article.description, 200)}
+            </p>
+          )}
+
+          {/* Content Preview (if available and different from description) */}
+          {article.content && article.content !== article.description && (
+            <div className="bg-gray-50 p-3 rounded border-l-2 border-gray-300">
+              <p className="text-gray-700 text-sm leading-relaxed italic">
+                {truncateText(article.content.replace(/\[\+\d+ chars\]$/, ''), 150)}
+                {article.content.includes('[+') && (
+                  <span className="text-gray-500 ml-1">(preview)</span>
+                )}
+              </p>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-2">
+            <a
+              href={article.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Read full article →
+            </a>
+            <div className="text-xs text-gray-400">
+              External link
+            </div>
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { Article, NewsSource, NewsAPIResponse, NewsAPIArticle } from '../types';
+import { Article, NewsSource, NewsAPIResponse, NewsAPIArticle, NewsLanguage, NewsSortBy, PaginatedResults } from '../types';
 import { NEWS_SOURCES } from '../data/newsSources';
 
 export class NewsAPIError extends Error {
@@ -15,6 +15,11 @@ export class NewsAPIError extends Error {
 const API_KEY = import.meta.env.VITE_NEWS_API_KEY;
 const BASE_URL = 'https://newsapi.org/v2';
 
+// Cache for available NewsAPI sources
+let cachedNewsAPISources: Set<string> | null = null;
+let sourceCacheTimestamp = 0;
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+
 // Create source mapping for quick lookups
 const sourceMapByName = new Map<string, NewsSource>();
 const sourceMapByApiId = new Map<string, NewsSource>();
@@ -26,13 +31,142 @@ NEWS_SOURCES.forEach(source => {
   }
 });
 
+// Fetch available NewsAPI sources
+export async function fetchAvailableNewsAPISources(): Promise<Set<string>> {
+  try {
+    if (!API_KEY) {
+      console.warn('NewsAPI key not configured');
+      return new Set<string>();
+    }
+
+    const response = await fetch(`${BASE_URL}/top-headlines/sources?apiKey=${API_KEY}`);
+    
+    if (!response.ok) {
+      console.warn('Failed to fetch NewsAPI sources, using cached or defaults');
+      return cachedNewsAPISources || new Set<string>();
+    }
+    
+    const data = await response.json();
+    const sources = new Set<string>(data.sources?.map((s: any) => s.id) || []);
+    
+    // Cache the results
+    cachedNewsAPISources = sources;
+    sourceCacheTimestamp = Date.now();
+    
+    return sources;
+  } catch (error) {
+    console.warn('Error fetching NewsAPI sources:', error);
+    return cachedNewsAPISources || new Set<string>();
+  }
+}
+
+// Get valid NewsAPI sources (with caching)
+export async function getValidNewsAPISources(): Promise<Set<string>> {
+  const now = Date.now();
+  
+  // Return cached sources if still valid
+  if (cachedNewsAPISources && (now - sourceCacheTimestamp) < CACHE_DURATION) {
+    return cachedNewsAPISources;
+  }
+  
+  return await fetchAvailableNewsAPISources();
+}
+
+// Validate and filter NewsAPI source IDs
+export async function validateNewsAPISources(sourceIds: string[]): Promise<{
+  valid: string[];
+  invalid: string[];
+}> {
+  const availableSources = await getValidNewsAPISources();
+  
+  const valid: string[] = [];
+  const invalid: string[] = [];
+  
+  sourceIds.forEach(sourceId => {
+    if (availableSources.has(sourceId)) {
+      valid.push(sourceId);
+    } else {
+      invalid.push(sourceId);
+    }
+  });
+  
+  return { valid, invalid };
+}
+
+// Fallback function to fetch articles without source filtering
+async function fetchArticlesByTopicWithoutSources(
+  _topic: string,
+  keywords: string[],
+  timeframeDays: number,
+  languages?: NewsLanguage[],
+  sortBy: NewsSortBy = 'relevancy',
+  domains?: string[],
+  excludeDomains?: string[],
+  page: number = 1,
+  pageSize: number = 100
+): Promise<PaginatedResults> {
+  const query = keywords.join(' OR ');
+  
+  const to = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - timeframeDays);
+  
+  const params = new URLSearchParams({
+    apiKey: API_KEY,
+    q: query,
+    from: from.toISOString(),
+    to: to.toISOString(),
+    language: languages && languages.length > 0 ? languages.join(',') : 'en',
+    sortBy: sortBy,
+    page: page.toString(),
+    pageSize: pageSize.toString()
+  });
+
+  // Add domain parameters if provided
+  if (domains && domains.length > 0) {
+    params.append('domains', domains.join(','));
+  }
+  if (excludeDomains && excludeDomains.length > 0) {
+    params.append('excludeDomains', excludeDomains.join(','));
+  }
+  
+  const response = await fetch(`${BASE_URL}/everything?${params}`);
+  
+  if (!response.ok) {
+    throw new NewsAPIError(`Fallback NewsAPI request failed with status ${response.status}`, 'fallbackFailed', response.status);
+  }
+  
+  const data: NewsAPIResponse = await response.json();
+  
+  if (data.status !== 'ok') {
+    throw new NewsAPIError(data.message || 'Fallback NewsAPI request failed', data.code || 'fallbackApiError');
+  }
+  
+  const articles = data.articles.map(apiArticle => mapNewsAPIToArticle(apiArticle));
+  const totalPages = Math.ceil(data.totalResults / pageSize);
+  
+  return {
+    articles,
+    totalResults: data.totalResults,
+    hasMorePages: page < totalPages,
+    currentPage: page,
+    totalPages
+  };
+}
+
 // Main function to fetch articles by topic
 export async function fetchArticlesByTopic(
   topic: string,
   keywords: string[],
   sources: string[],
-  timeframeDays: number
-): Promise<Article[]> {
+  timeframeDays: number,
+  languages?: NewsLanguage[],
+  sortBy: NewsSortBy = 'relevancy',
+  domains?: string[],
+  excludeDomains?: string[],
+  page: number = 1,
+  pageSize: number = 100
+): Promise<PaginatedResults> {
   try {
     // Build query from keywords
     const query = keywords.join(' OR ');
@@ -42,13 +176,24 @@ export async function fetchArticlesByTopic(
     const from = new Date();
     from.setDate(from.getDate() - timeframeDays);
     
-    // Map source IDs to NewsAPI IDs
+    // Map source IDs to NewsAPI IDs and validate them
     const newsApiSources = sources
       .map(sourceId => {
         const source = NEWS_SOURCES.find(s => s.id === sourceId);
         return source?.newsApiId;
       })
-      .filter(Boolean);
+      .filter(Boolean) as string[];
+    
+    // Validate sources against NewsAPI
+    const { valid: validSources, invalid: invalidSources } = await validateNewsAPISources(newsApiSources);
+    
+    if (invalidSources.length > 0) {
+      console.warn('Invalid NewsAPI sources detected:', invalidSources);
+    }
+    
+    if (validSources.length === 0) {
+      console.warn('No valid NewsAPI sources found, searching all sources');
+    }
     
     // Build API URL
     const params = new URLSearchParams({
@@ -56,32 +201,65 @@ export async function fetchArticlesByTopic(
       q: query,
       from: from.toISOString(),
       to: to.toISOString(),
-      language: 'en',
-      sortBy: 'relevancy',
-      pageSize: '100'
+      language: languages && languages.length > 0 ? languages.join(',') : 'en',
+      sortBy: sortBy,
+      page: page.toString(),
+      pageSize: pageSize.toString()
     });
     
-    // Add sources if specific ones selected
-    if (newsApiSources.length > 0) {
-      params.append('sources', newsApiSources.join(','));
+    // Add sources if valid ones exist
+    if (validSources.length > 0) {
+      params.append('sources', validSources.join(','));
+    }
+
+    // Add domain parameters if provided (but only if no sources are specified, as they conflict)
+    if (validSources.length === 0) {
+      if (domains && domains.length > 0) {
+        params.append('domains', domains.join(','));
+      }
+      if (excludeDomains && excludeDomains.length > 0) {
+        params.append('excludeDomains', excludeDomains.join(','));
+      }
     }
     
     const response = await fetch(`${BASE_URL}/everything?${params}`);
-        if (response.status === 429) {
+    
+    if (response.status === 429) {
       throw new NewsAPIError('Rate limit exceeded. Please try again later.', 'rateLimited', 429);
     }
     if (response.status === 401) {
       throw new NewsAPIError('Invalid API key. Please check your configuration.', 'unauthorized', 401);
     }
+    if (response.status === 400) {
+      const errorData = await response.json().catch(() => ({}));
+      if (errorData.message?.includes('source')) {
+        console.warn('Source-related error, attempting fallback without specific sources');
+        // Retry without sources parameter
+        return await fetchArticlesByTopicWithoutSources(topic, keywords, timeframeDays, languages, sortBy, domains, excludeDomains, page, pageSize);
+      }
+      throw new NewsAPIError(errorData.message || 'Bad request to NewsAPI', 'badRequest', 400);
+    }
+    if (!response.ok) {
+      throw new NewsAPIError(`NewsAPI request failed with status ${response.status}`, 'requestFailed', response.status);
+    }
     
     const data: NewsAPIResponse = await response.json();
     
     if (data.status !== 'ok') {
-      throw new Error(data.message || 'NewsAPI request failed');
+      throw new NewsAPIError(data.message || 'NewsAPI request failed', data.code || 'apiError');
     }
     
-    // Convert to our Article format
-    return data.articles.map(apiArticle => mapNewsAPIToArticle(apiArticle));
+    // Convert to our Article format and return paginated results
+    const articles = data.articles.map(apiArticle => mapNewsAPIToArticle(apiArticle));
+    const totalPages = Math.ceil(data.totalResults / pageSize);
+    
+    return {
+      articles,
+      totalResults: data.totalResults,
+      hasMorePages: page < totalPages,
+      currentPage: page,
+      totalPages
+    };
   } catch (error) {
     console.error('NewsAPI fetch error:', error);
     throw error;
@@ -107,6 +285,10 @@ function mapNewsAPIToArticle(apiArticle: NewsAPIArticle): Article {
     pubDate: apiArticle.publishedAt,
     source: apiArticle.source.name,
     sourceLean: politicalLean,
+    // Enhanced NewsAPI fields
+    imageUrl: apiArticle.urlToImage || undefined,
+    author: apiArticle.author || undefined,
+    content: apiArticle.content || undefined,
   };
 }
 
@@ -114,8 +296,14 @@ function mapNewsAPIToArticle(apiArticle: NewsAPIArticle): Article {
 export async function searchAllSources(
   keywords: string[],
   timeframeDays: number,
-  excludeSources?: string[]
-): Promise<Article[]> {
+  excludeSources?: string[],
+  languages?: NewsLanguage[],
+  sortBy: NewsSortBy = 'relevancy',
+  domains?: string[],
+  excludeDomains?: string[],
+  page: number = 1,
+  pageSize: number = 100
+): Promise<PaginatedResults> {
   try {
     const query = keywords.join(' OR ');
     
@@ -128,23 +316,36 @@ export async function searchAllSources(
       q: query,
       from: from.toISOString(),
       to: to.toISOString(),
-      language: 'en',
-      sortBy: 'relevancy',
-      pageSize: '100'
+      language: languages && languages.length > 0 ? languages.join(',') : 'en',
+      sortBy: sortBy,
+      page: page.toString(),
+      pageSize: pageSize.toString()
     });
+
+    // Add domain parameters if provided
+    if (domains && domains.length > 0) {
+      params.append('domains', domains.join(','));
+    }
+    if (excludeDomains && excludeDomains.length > 0) {
+      params.append('excludeDomains', excludeDomains.join(','));
+    }
     
     const response = await fetch(`${BASE_URL}/everything?${params}`);
-        if (response.status === 429) {
+    
+    if (response.status === 429) {
       throw new NewsAPIError('Rate limit exceeded. Please try again later.', 'rateLimited', 429);
     }
     if (response.status === 401) {
       throw new NewsAPIError('Invalid API key. Please check your configuration.', 'unauthorized', 401);
     }
+    if (!response.ok) {
+      throw new NewsAPIError(`NewsAPI request failed with status ${response.status}`, 'requestFailed', response.status);
+    }
     
     const data: NewsAPIResponse = await response.json();
     
     if (data.status !== 'ok') {
-      throw new Error(data.message || 'NewsAPI request failed');
+      throw new NewsAPIError(data.message || 'NewsAPI request failed', data.code || 'apiError');
     }
     
     let articles = data.articles.map(apiArticle => mapNewsAPIToArticle(apiArticle));
@@ -157,7 +358,15 @@ export async function searchAllSources(
       );
     }
     
-    return articles;
+    const totalPages = Math.ceil(data.totalResults / pageSize);
+    
+    return {
+      articles,
+      totalResults: data.totalResults,
+      hasMorePages: page < totalPages,
+      currentPage: page,
+      totalPages
+    };
   } catch (error) {
     console.error('NewsAPI search error:', error);
     throw error;

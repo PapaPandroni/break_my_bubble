@@ -2,36 +2,36 @@ import { Article, NewsSource } from '../types'
 import { fetchWithCorsProxy } from './corsProxy'
 import { extractTextFromHTML } from '../utils/helpers'
 
-interface RSSItem {
-  title?: string
-  description?: string
-  link?: string
-  pubDate?: string
-  'content:encoded'?: string
-  guid?: string
-}
+// interface RSSItem {
+//   title?: string
+//   description?: string
+//   link?: string
+//   pubDate?: string
+//   'content:encoded'?: string
+//   guid?: string
+// }
 
-interface RSSChannel {
-  title?: string
-  description?: string
-  item?: RSSItem | RSSItem[]
-}
+// interface RSSChannel {
+//   title?: string
+//   description?: string
+//   item?: RSSItem | RSSItem[]
+// }
 
-interface RSSFeed {
-  rss?: {
-    channel?: RSSChannel
-  }
-  feed?: {
-    title?: string
-    entry?: RSSItem | RSSItem[]
-  }
-}
+// interface RSSFeed {
+//   rss?: {
+//     channel?: RSSChannel
+//   }
+//   feed?: {
+//     title?: string
+//     entry?: RSSItem | RSSItem[]
+//   }
+// }
 
 export const parseRSSFeed = async (
   source: NewsSource
 ): Promise<Article[]> => {
   try {
-    const xmlData = await fetchWithCorsProxy(source.rssUrl)
+    const xmlData = await fetchWithCorsProxy(source.rssUrl!)
     const parser = new DOMParser()
     const xmlDoc = parser.parseFromString(xmlData, 'text/xml')
 
