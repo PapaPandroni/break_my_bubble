@@ -8,7 +8,7 @@ import { filterAndProcessArticles, getOpposingPerspectives } from './services/fi
 import { feedCache } from './services/cacheService'
 import { debugFeedAccess, debugTopicFiltering, debugNewsAPI, debugSourceValidation, debugCacheStatus } from './services/debugService'
 import { getMockArticlesForDemo } from './services/mockDataService'
-import { fetchDynamicSources, getAvailableCountries } from './services/dynamicSourceService'
+import { unifiedSourceService } from './services/unifiedSourceService'
 
 // Components
 import Header from './components/Header'
@@ -39,7 +39,9 @@ interface AppState {
     opposingArticles: Article[]
   } | null
   availableSources: NewsSource[]
+  allSources: NewsSource[] // All sources (unfiltered)
   availableCountries: string[]
+  allSourcesLoaded: boolean
 }
 
 function App() {
@@ -58,62 +60,81 @@ function App() {
     isLoadingSources: false,
     error: null,
     results: null,
-    availableSources: useNewsAPI ? [] : NEWS_SOURCES, // Start with static sources for RSS mode
-    availableCountries: [], // Will be populated when sources are fetched
+    availableSources: NEWS_SOURCES.map(source => ({ ...source, isDynamic: false })), // Start with static sources immediately
+    allSources: NEWS_SOURCES.map(source => ({ ...source, isDynamic: false })), // Store all sources for filtering
+    availableCountries: ['us'], // Start with US as most static sources are US-based
+    allSourcesLoaded: !useNewsAPI, // If not using NewsAPI, we already have all sources
   })
 
   const canAnalyze = state.selectedSources.length >= 1 && state.selectedTopic
 
-  // Fetch dynamic sources when NewsAPI mode, languages, or countries change
+  // Initialize sources with optimistic loading
   useEffect(() => {
     if (useNewsAPI && hasNewsAPIKey) {
-      fetchSources()
-    } else if (useNewsAPI && !hasNewsAPIKey) {
-      // Use static sources as fallback when API key is missing
-      setState(prev => ({ 
-        ...prev, 
-        availableSources: NEWS_SOURCES,
-        availableCountries: ['us'],
-        isLoadingSources: false
-      }))
+      initializeSourcesOptimistically()
+    } else {
+      // Start background preload for better user experience even in RSS mode
+      unifiedSourceService.preloadSources()
     }
-  }, [useNewsAPI, hasNewsAPIKey, state.selectedLanguages, state.selectedCountries])
+  }, [useNewsAPI, hasNewsAPIKey])
 
-  const fetchSources = async () => {
-    setState(prev => ({ ...prev, isLoadingSources: true, error: null }))
-    
+  const initializeSourcesOptimistically = async () => {
     try {
-      const sources = await fetchDynamicSources(
-        state.selectedLanguages.length > 0 ? state.selectedLanguages : undefined,
-        undefined, // categories - not filtering by categories at the top level
-        state.selectedCountries.length > 0 ? state.selectedCountries : undefined
-      )
+      // Get sources with optimistic loading - this returns static sources immediately
+      const { sources, isLoading, loadDynamic } = await unifiedSourceService.getSourcesOptimistic()
       
-      // Extract unique countries from sources
-      const availableCountries = getAvailableCountries(sources)
-      
+      // Update state with initial sources (static sources)
       setState(prev => ({ 
         ...prev, 
         availableSources: sources,
-        availableCountries: availableCountries,
-        isLoadingSources: false,
-        // Clear selected sources if they're no longer available
-        selectedSources: prev.selectedSources.filter(id => 
-          sources.some(source => source.id === id)
-        ),
-        // Clear selected countries if they're no longer available
-        selectedCountries: prev.selectedCountries.filter(country =>
-          availableCountries.includes(country)
-        )
+        allSources: sources,
+        availableCountries: unifiedSourceService.getAvailableCountries(sources),
+        isLoadingSources: isLoading,
+        allSourcesLoaded: !isLoading
       }))
+
+      // Load dynamic sources in background if needed
+      if (isLoading) {
+        try {
+          const dynamicSources = await loadDynamic()
+          
+          // Apply current filters to the new sources
+          const filteredSources = unifiedSourceService.filterSources(dynamicSources, {
+            languages: state.selectedLanguages,
+            countries: state.selectedCountries,
+            categories: [],
+            search: ''
+          })
+          
+          setState(prev => ({ 
+            ...prev, 
+            availableSources: filteredSources,
+            allSources: dynamicSources, // Store all sources for filtering
+            availableCountries: unifiedSourceService.getAvailableCountries(dynamicSources),
+            isLoadingSources: false,
+            allSourcesLoaded: true,
+            // Preserve selected sources if they're still available
+            selectedSources: prev.selectedSources.filter(id => 
+              dynamicSources.some(source => source.id === id)
+            )
+          }))
+        } catch (error) {
+          console.warn('Failed to load dynamic sources, keeping static sources:', error)
+          setState(prev => ({ 
+            ...prev, 
+            isLoadingSources: false,
+            allSourcesLoaded: true,
+            error: 'Using basic sources. Dynamic sources failed to load.'
+          }))
+        }
+      }
     } catch (error) {
-      console.error('Failed to fetch dynamic sources:', error)
+      console.error('Failed to initialize sources:', error)
       setState(prev => ({ 
         ...prev, 
-        availableSources: NEWS_SOURCES, // Fallback to static sources
-        availableCountries: ['us'], // Most static sources are US-based
         isLoadingSources: false,
-        error: 'Failed to load sources. Using default sources.'
+        allSourcesLoaded: true,
+        error: 'Failed to load sources.'
       }))
     }
   }
@@ -132,16 +153,41 @@ function App() {
       error: null,
       results: null,
       availableSources: prev.availableSources, // Keep available sources
+      allSources: prev.allSources, // Keep all sources
       availableCountries: prev.availableCountries, // Keep available countries
+      allSourcesLoaded: prev.allSourcesLoaded, // Keep loading status
+    }))
+  }
+
+  // Client-side filtering for performance
+  const applySourceFilters = (languages: NewsLanguage[], countries: string[]) => {
+    const filteredSources = unifiedSourceService.filterSources(state.allSources, {
+      languages: languages,
+      countries: countries,
+      categories: [],
+      search: ''
+    })
+
+    setState(prev => ({ 
+      ...prev, 
+      availableSources: filteredSources,
+      // Clear selected sources that are no longer available after filtering
+      selectedSources: prev.selectedSources.filter(id => 
+        filteredSources.some(source => source.id === id)
+      )
     }))
   }
 
   const handleLanguagesChange = (languages: NewsLanguage[]) => {
     setState(prev => ({ ...prev, selectedLanguages: languages }))
+    // Apply filters client-side for instant results
+    applySourceFilters(languages, state.selectedCountries)
   }
 
   const handleCountriesChange = (countries: string[]) => {
     setState(prev => ({ ...prev, selectedCountries: countries }))
+    // Apply filters client-side for instant results
+    applySourceFilters(state.selectedLanguages, countries)
   }
 
   const handleDateRangeChange = (dateRange: DateRange) => {
@@ -403,6 +449,7 @@ function App() {
                 }
                 isLoading={state.isLoadingSources}
                 isDynamic={useNewsAPI}
+                allSourcesLoaded={state.allSourcesLoaded}
               />
             </section>
 

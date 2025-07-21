@@ -11,6 +11,7 @@ interface SourceInputProps {
   isLoading?: boolean
   isDynamic?: boolean
   onFiltersChange?: (filters: SourceFilters) => void
+  allSourcesLoaded?: boolean
 }
 
 export default function SourceInput({
@@ -22,6 +23,7 @@ export default function SourceInput({
   isLoading = false,
   isDynamic = false,
   onFiltersChange: _onFiltersChange,
+  allSourcesLoaded = true,
 }: SourceInputProps) {
   const [showDropdown, setShowDropdown] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -122,6 +124,9 @@ export default function SourceInput({
           Choose {minSources}-{maxSources} sources you typically read. 
           We'll show you how other sources cover the same topics.
           {isDynamic && ` Found ${sources.length} available sources.`}
+          {isDynamic && !allSourcesLoaded && (
+            <span className="text-blue-600"> Loading more sources in background...</span>
+          )}
         </p>
 
         {/* Filters */}
@@ -196,19 +201,17 @@ export default function SourceInput({
         <button
           onClick={() => setShowDropdown(!showDropdown)}
           className="w-full px-4 py-3 text-left bg-white border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={selectedSources.length >= maxSources || isLoading}
+          disabled={selectedSources.length >= maxSources}
           aria-expanded={showDropdown}
           aria-haspopup="listbox"
         >
           <span className="text-gray-700">
-            {isLoading 
-              ? 'Loading sources...' 
-              : selectedSources.length >= maxSources 
+            {selectedSources.length >= maxSources 
               ? 'Maximum sources selected' 
               : 'Click to add more sources...'}
           </span>
           <span className="float-right text-gray-400">
-            {isLoading ? '⟳' : showDropdown ? '▲' : '▼'}
+            {!allSourcesLoaded ? '⟳' : showDropdown ? '▲' : '▼'}
           </span>
         </button>
 
@@ -229,12 +232,17 @@ export default function SourceInput({
             )}
             
             <div className="max-h-64 overflow-y-auto">
-              {isLoading ? (
-                <div className="px-4 py-8 text-center text-gray-500">
-                  <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2"></div>
-                  Loading sources...
+              {/* Show background loading indicator when not all sources loaded */}
+              {!allSourcesLoaded && sources.length > 0 && (
+                <div className="px-4 py-2 bg-blue-50 border-b border-blue-100 text-center">
+                  <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
+                    <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                    Loading additional sources...
+                  </div>
                 </div>
-              ) : filteredSources.length === 0 ? (
+              )}
+              
+              {filteredSources.length === 0 ? (
                 <div className="px-4 py-8 text-center text-gray-500">
                   {searchTerm || selectedCategory ? 'No sources match your filters' : 'No sources available'}
                 </div>
