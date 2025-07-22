@@ -116,11 +116,15 @@ async function fetchArticlesByTopicWithoutSources(
     q: query,
     from: from.toISOString(),
     to: to.toISOString(),
-    language: languages && languages.length > 0 ? languages.join(',') : 'en',
     sortBy: sortBy,
     page: page.toString(),
     pageSize: pageSize.toString()
   });
+  
+  // Only add language parameter if languages are specified
+  if (languages && languages.length > 0) {
+    params.append('language', languages.join(','));
+  }
 
   // Add domain parameters if provided
   if (domains && domains.length > 0) {
@@ -201,11 +205,15 @@ export async function fetchArticlesByTopic(
       q: query,
       from: from.toISOString(),
       to: to.toISOString(),
-      language: languages && languages.length > 0 ? languages.join(',') : 'en',
       sortBy: sortBy,
       page: page.toString(),
       pageSize: pageSize.toString()
     });
+    
+    // Only add language parameter if languages are specified
+    if (languages && languages.length > 0) {
+      params.append('language', languages.join(','));
+    }
     
     // Add sources if valid ones exist
     if (validSources.length > 0) {
@@ -316,11 +324,15 @@ export async function searchAllSources(
       q: query,
       from: from.toISOString(),
       to: to.toISOString(),
-      language: languages && languages.length > 0 ? languages.join(',') : 'en',
       sortBy: sortBy,
       page: page.toString(),
       pageSize: pageSize.toString()
     });
+    
+    // Only add language parameter if languages are specified
+    if (languages && languages.length > 0) {
+      params.append('language', languages.join(','));
+    }
 
     // Add domain parameters if provided
     if (domains && domains.length > 0) {

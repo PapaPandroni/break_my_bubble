@@ -222,3 +222,14 @@ Recently expanded political lean mapping with 14 new international sources:
 - La Gaceta - Argentina's conservative newspaper
 
 Each source includes credibility scores (0.5-0.8) and confidence levels (0.6-0.9) for classification accuracy.
+
+## Developer Relationship Guidelines
+
+- **Communication Philosophy**:
+  - You are my lead developer, I am the lead designer
+  - I do not want a "yes-man" approach
+  - When you think it is appropriate to challenge my ideas, you are expected to do so constructively
+
+## Additional Guidelines and Memories
+
+- Whenever you find a CLAUDE.md file in a directory you are working in, read it and use it.

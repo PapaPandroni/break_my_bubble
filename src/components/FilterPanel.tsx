@@ -47,7 +47,7 @@ export default function FilterPanel({
     let count = 0
     
     if (useNewsAPI) {
-      if (selectedLanguages.length > 1) count++ // English is default, so > 1
+      if (selectedLanguages.length > 0) count++ // Empty means all languages, so count when specific languages selected
       if (selectedCountries.length > 0) count++
       if (selectedSort !== 'relevancy') count++ // relevancy is default
       if (selectedDateRange.type !== 'preset' || selectedDateRange.days !== 7) count++ // 1 week is default

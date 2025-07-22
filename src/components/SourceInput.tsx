@@ -34,12 +34,12 @@ export default function SourceInput({
     const isSelected = selectedSources.includes(sourceId)
     
     if (isSelected) {
-      if (selectedSources.length > minSources) {
-        onSourcesChange(selectedSources.filter(id => id !== sourceId))
-      }
+      // Always allow removal - users should be able to clear all sources
+      onSourcesChange(selectedSources.filter(id => id !== sourceId))
     } else {
       if (selectedSources.length < maxSources) {
         onSourcesChange([...selectedSources, sourceId])
+        setShowDropdown(false) // Close dropdown after adding a source
       }
     }
   }

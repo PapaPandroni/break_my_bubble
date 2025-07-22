@@ -60,9 +60,9 @@ export const TOPICS: TopicKeywords[] = [
 ]
 
 export const TIME_OPTIONS: TimeOption[] = [
-  { label: '24 hours', value: 1 },
-  { label: '3 days', value: 3 },
-  { label: '1 week', value: 7 },
-  { label: '2 weeks', value: 14 },
-  { label: '1 month', value: 30 },
+  { label: '24 hours', value: 1, days: 1 },
+  { label: '3 days', value: 3, days: 3 },
+  { label: '1 week', value: 7, days: 7 },
+  { label: '2 weeks', value: 14, days: 14 },
+  { label: '1 month', value: 30, days: 30 },
 ]

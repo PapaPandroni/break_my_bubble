@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Article, NewsSource, NewsLanguage, NewsSortBy } from './types'
+import { DateRange } from './components/DateRangePicker'
 import { NEWS_SOURCES } from './data/newsSources'
 import { TOPICS, TIME_OPTIONS } from './data/topics'
 import { fetchArticlesByTopic, searchAllSources } from './services/newsApiService'
@@ -49,7 +50,7 @@ function App() {
     selectedTopic: '',
     selectedTimeframe: 7, // Default to 1 week (for RSS mode)
     selectedDateRange: { type: 'preset', days: 7, label: 'Last week' }, // Default for NewsAPI mode
-    selectedLanguages: ['en'], // Default to English
+    selectedLanguages: [], // Start with empty language selection
     selectedCountries: [], // Default to all countries
     selectedSort: 'relevancy', // Default to relevancy
     isLoading: false,
@@ -141,7 +142,7 @@ function App() {
       selectedTopic: '',
       selectedTimeframe: 7,
       selectedDateRange: { type: 'preset', days: 7, label: 'Last week' },
-      selectedLanguages: ['en'],
+      selectedLanguages: [],
       selectedCountries: [],
       selectedSort: 'relevancy',
       isLoading: false,

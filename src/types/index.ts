@@ -45,6 +45,7 @@ export interface UserSelection {
 export interface TimeOption {
   label: string
   value: number
+  days: number
 }
 
 export interface CachedFeed {
