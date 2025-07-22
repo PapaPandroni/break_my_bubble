@@ -1,12 +1,13 @@
-# Data Directory
+# Data Directory ✨ *Enhanced with Multilanguage Support*
 
-This directory contains static data configurations used throughout the BreakMyBubble application. These files define news sources, topic keywords, and other reference data.
+This directory contains static data configurations used throughout the BreakMyBubble application. These files define news sources, topic keywords, multilanguage translations, and other reference data.
 
 ## Overview
 
 The data directory provides:
 - **Static News Sources**: Curated list of news outlets with political lean classifications (baseline for dynamic system)
-- **Topic Keywords**: Keyword mappings for content filtering
+- **Topic Keywords**: Keyword mappings for content filtering with multilanguage support
+- **Multilanguage Translations**: Professional translations for 5 topics across 14 languages (1,400+ keywords)
 - **Time Options**: Predefined time range configurations with explicit days property
 - **Reference Data**: Structured data for consistent application behavior
 - **Dynamic Source Fallbacks**: Stable fallback data when dynamic source fetching fails
@@ -15,8 +16,9 @@ The data directory provides:
 
 ```
 src/data/
-├── newsSources.ts      # Curated news sources with political classifications
-└── topics.ts          # Topic keywords and time range options
+├── newsSources.ts           # Curated news sources with political classifications
+├── topics.ts               # Enhanced topic keywords with multilanguage integration
+└── multiLanguageKeywords.ts # Comprehensive multilanguage keyword translations
 ```
 
 ## Core Data Files
@@ -151,9 +153,59 @@ export const NEWS_SOURCES: NewsSource[] = [
 }
 ```
 
-### **topics.ts**
+### **multiLanguageKeywords.ts** ✨ *New File*
 
-**Purpose**: Defines topic categories with associated keywords for content filtering and time range options.
+**Purpose**: Comprehensive multilanguage keyword translations for international news analysis.
+
+**Structure**:
+```typescript
+export const MULTI_LANGUAGE_TOPICS: TopicKeywords[] = [
+  {
+    topic: 'Climate Change',
+    keywords: [], // Legacy - kept for compatibility
+    multiLanguageKeywords: {
+      'en': ['climate change', 'global warming', ...], // 20+ English keywords
+      'es': ['cambio climático', 'calentamiento global', ...], // 20+ Spanish keywords
+      'fr': ['changement climatique', 'réchauffement climatique', ...], // 20+ French keywords
+      // ... 14 languages total per topic
+    },
+    fallbackKeywords: ['climate change', 'global warming', ...]
+  }
+]
+```
+
+**Language Coverage** (14 languages):
+- **Arabic** (ar): العربية
+- **Chinese** (zh): 中文  
+- **Dutch** (nl): Nederlands
+- **English** (en): English
+- **French** (fr): Français
+- **German** (de): Deutsch
+- **Hebrew** (he): עברית
+- **Italian** (it): Italiano
+- **Norwegian** (no): Norsk
+- **Portuguese** (pt): Português
+- **Russian** (ru): Русский
+- **Spanish** (es): Español
+- **Swedish** (sv): Svenska
+- **Urdu** (ud): اردو
+
+**Topics with Full Translations** (5 topics):
+1. **Climate Change**: Environmental policy, sustainability, renewable energy
+2. **Healthcare**: Medical costs, insurance, policy reform
+3. **Immigration**: Border security, asylum policy, visa reform
+4. **Economy**: Economic growth, inflation, employment, financial policy
+5. **Technology**: AI, cybersecurity, digital privacy, tech regulation
+
+**Helper Functions**:
+```typescript
+export function getKeywordsForLanguage(topic: string, language: NewsLanguage): string[]
+export function getAvailableLanguagesForTopic(topic: string): NewsLanguage[]
+```
+
+### **topics.ts** ✨ *Enhanced with Multilanguage Integration*
+
+**Purpose**: Defines topic categories with associated keywords for content filtering and time range options, now enhanced with multilanguage support.
 
 **Structure**:
 ```typescript

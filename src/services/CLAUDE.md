@@ -146,11 +146,14 @@ const POLITICAL_LEAN_MAPPING: PoliticalLeanMapping = {
 }
 ```
 
-### **filterService.ts**
-**Purpose**: Article filtering, processing, and intelligent opposing perspective logic
+### **filterService.ts** ✨ *Enhanced with Multilanguage Support*
+**Purpose**: Article filtering, processing, and intelligent opposing perspective logic with comprehensive multilanguage search
 
 **Key Features**:
-- Advanced keyword matching with relevance scoring
+- **Multilanguage Keyword Matching**: Smart language-aware article filtering
+- **Custom Search Term Integration**: User-defined search terms override topic keywords
+- **Intelligent Fallback System**: Requested language → English → Legacy keywords
+- Advanced relevance scoring with multilanguage normalization
 - Date range filtering with timezone handling
 - Political perspective analysis and categorization
 - **Intelligent Opposition Ranking**: Political lean distance scoring (0-100 points)
@@ -174,13 +177,21 @@ const OPPOSITION_MATRIX = {
 }
 ```
 
-**Enhanced API**:
+**Enhanced API** (Updated for Multilanguage Support):
 ```typescript
-export function filterAndProcessArticles(articles: Article[], topic: TopicKeywords, timeframe: number, sortBy: NewsSortBy): Article[]
+export function filterArticlesByTopic(articles: Article[], topicKeywords: TopicKeywords, selectedLanguages?: NewsLanguage[], customSearchTerms?: string[]): Article[]
+export function filterAndProcessArticles(articles: Article[], topic: TopicKeywords, timeframe: number, sortBy: NewsSortBy, maxArticlesPerSource?: number, selectedLanguages?: NewsLanguage[], customSearchTerms?: string[]): Article[]
 export function getOpposingPerspectives(userSources: NewsSource[], allArticles: Article[], sortBy: NewsSortBy): { userArticles: Article[], opposingArticles: Article[] }
 export function detectUserPoliticalLean(selectedSources: NewsSource[]): { primaryLean: PoliticalLean, confidence: number, distribution: Record<PoliticalLean, number> }
 export function calculateTopicRelevance(article: Article, keywords: TopicKeywords): number
 ```
+
+**New Multilanguage Features**:
+- `filterArticlesByTopic()`: Now accepts `selectedLanguages[]` and `customSearchTerms[]` parameters
+- Smart keyword selection based on user's language preferences
+- Custom search terms take priority over predefined topic keywords
+- Automatic fallback to English keywords when requested language unavailable
+- Efficient keyword normalization for improved matching accuracy
 
 ## Utility Services
 

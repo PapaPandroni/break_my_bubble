@@ -23,10 +23,10 @@ npm run test:newsapi
 
 ## Project Status
 
-**Version**: 2.1 - International News Sources & Enhanced Classification System ✅  
+**Version**: 2.2 - Multilanguage Search & Free Text Search ✅  
 **Last Updated**: July 2025  
 **Build Status**: ✅ Production Ready  
-**Features**: Expanded NewsAPI integration with 27+ classified international sources
+**Features**: Comprehensive multilanguage search support (14 languages) + free text search functionality
 
 ## Architecture Overview
 
@@ -35,9 +35,9 @@ BreakMyBubble is a React + TypeScript news analysis app that helps users discove
 ### Core Components Structure
 
 - **App.tsx**: Main application with dual data source support and enhanced NewsAPI features
-- **Components**: 15+ modular UI components including advanced selectors and filters
-- **Services**: Business logic layer with comprehensive NewsAPI integration
-- **Data**: Static configuration for news sources, topics, and language mappings
+- **Components**: 15+ modular UI components including advanced selectors, filters, and CustomSearchInput
+- **Services**: Business logic layer with comprehensive NewsAPI integration and multilanguage filtering
+- **Data**: Static configuration for news sources, topics, and multilanguage keyword mappings
 
 ### Data Source Architecture
 
@@ -65,15 +65,38 @@ The app supports two data fetching strategies controlled by the `VITE_USE_NEWS_A
 - **SortSelector**: Sort by relevancy, publishedAt, or popularity
 - **DateRangePicker**: Custom date ranges or preset options (replaces TimeSlider)
 - **Enhanced ResultsDisplay**: Article images, author info, content previews with 5-point political lean classification
+- **CustomSearchInput**: Free text search with multilanguage support, real-time parsing, and term management
+- **TopicSelector**: Enhanced with "Custom Search" option for user-defined search terms
 
 ### Key Services
 
 - **newsApiService.ts**: Complete NewsAPI integration with pagination, sorting, domain filtering
 - **dynamicSourceService.ts**: Dynamic source fetching with enhanced political lean classification (27+ international sources)
 - **rssService.ts**: RSS feed parsing with CORS proxy (fallback mode)
-- **filterService.ts**: Article filtering and opposing perspective logic
+- **filterService.ts**: Article filtering and opposing perspective logic with multilanguage keyword support
 - **cacheService.ts**: 30-minute local storage caching system
 - **debugService.ts**: Development debugging utilities with NewsAPI testing
+
+### Multilanguage Search & Free Text Search System ✨
+
+**Multilanguage Topic Keywords** (`/src/data/multiLanguageKeywords.ts`):
+- **14 Language Support**: Arabic, Chinese, Dutch, English, French, German, Hebrew, Italian, Norwegian, Portuguese, Russian, Spanish, Swedish, Urdu
+- **5 Fully Translated Topics**: Climate Change, Healthcare, Immigration, Economy, Technology
+- **Smart Fallback System**: Requested language → English → Legacy keywords
+- **Professional Translations**: 20+ keywords per topic per language (1,400+ total keywords)
+
+**Free Text Search** (`/src/components/CustomSearchInput.tsx`):
+- **Real-time Parsing**: Comma and space-separated terms with instant validation
+- **Term Management**: Individual term removal with visual chips
+- **Multilanguage Support**: Works seamlessly with any language input
+- **User Experience**: Auto-complete, help text, and clear visual feedback
+- **Integration**: "Custom Search" option in TopicSelector with distinct purple styling
+
+**Enhanced Filtering** (`/src/services/filterService.ts`):
+- **Language-aware Matching**: Uses appropriate keywords based on selected languages
+- **Custom Term Priority**: User-defined search terms override topic keywords
+- **Intelligent Fallbacks**: Multiple fallback strategies for maximum coverage
+- **Performance Optimized**: Efficient keyword normalization and caching
 
 ### News Source Configuration
 
@@ -98,7 +121,8 @@ Uses React hooks with enhanced AppState interface:
 - Multi-country filtering (up to 3 countries)
 - Sort preferences (relevancy/date/popularity)
 - Custom date ranges or preset timeframes
-- Topic filtering (5 predefined topics)
+- Topic filtering (12 predefined topics + custom search capability)
+- Custom search terms (user-defined multilanguage search)
 - Results display with enhanced article data
 - Available sources management (static + dynamic)
 - Loading states for sources and results

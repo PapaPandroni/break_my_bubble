@@ -63,15 +63,23 @@ export interface Article {
 }
 ```
 
-### **TopicKeywords**
-Defines topics and their associated keywords for content filtering.
+### **TopicKeywords** ✨ *Enhanced with Multilanguage Support*
+Defines topics and their associated keywords for content filtering, now with comprehensive multilanguage support.
 
 ```typescript
 export interface TopicKeywords {
-  topic: string;             // Topic display name
-  keywords: string[];        // Keywords for content matching
+  topic: string;                                          // Topic display name
+  keywords: string[];                                     // Legacy keywords (maintained for compatibility)
+  multiLanguageKeywords?: Record<NewsLanguage, string[]>; // Multilanguage keyword translations
+  fallbackKeywords?: string[];                           // English fallback when translation unavailable
+  customSearch?: boolean;                                 // Indicates if this is a custom search topic
 }
 ```
+
+**New Multilanguage Properties**:
+- `multiLanguageKeywords`: Maps language codes to keyword arrays (e.g., `{'es': ['cambio climático', ...], 'fr': ['changement climatique', ...]}`)
+- `fallbackKeywords`: English keywords used when requested language not available
+- `customSearch`: Boolean flag for user-defined custom search topics
 
 ### **UserSelection**
 Captures user's current selections and preferences.
@@ -80,12 +88,16 @@ Captures user's current selections and preferences.
 export interface UserSelection {
   sources: string[];         // Selected source IDs (1-5 sources)
   topic: string;            // Selected topic
+  customSearchTerms?: string[]; // User-defined search terms (NEW)
   timeframe: number;        // Days to look back (RSS mode)
   languages: NewsLanguage[];// Selected languages (NewsAPI mode)
   domains?: string[];       // Include specific domains
   excludeDomains?: string[];// Exclude specific domains
 }
 ```
+
+**New Property**:
+- `customSearchTerms`: Array of user-defined search terms that override topic keywords when provided
 
 ## NewsAPI Integration Types
 

@@ -60,9 +60,24 @@ App.tsx
 - Responsive grid layout
 
 #### **TopicSelector.tsx**
-- Five predefined topics: Climate Change, Healthcare, Immigration, Economy, Technology
-- Clear visual selection with descriptions
-- Keyword preview for each topic
+- Twelve predefined topics with multilanguage support
+- **Enhanced with Custom Search**: Purple-styled "Custom Search" option for free text search
+- Clear visual selection with keyword previews
+- Integration with CustomSearchInput for user-defined search terms
+- Dynamic display of active search terms with counts
+
+#### **CustomSearchInput.tsx** ✨ *New Component*
+- **Free text search input** with comprehensive multilanguage support
+- **Real-time parsing**: Comma and space-separated terms with instant validation
+- **Visual term management**: Individual removable chips for each search term
+- **User experience features**:
+  - Auto-clear functionality (Escape key)
+  - Term count display with warnings
+  - Comprehensive help text and tips
+  - Maximum term limits (10 terms default)
+- **Accessibility**: Full keyboard navigation and screen reader support
+- **Integration**: Seamless integration with topic-based search system
+- **Performance**: Debounced updates and efficient state management
 
 #### **TimeSlider.tsx**
 - **Used in**: RSS mode only
