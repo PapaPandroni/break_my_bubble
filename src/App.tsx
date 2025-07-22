@@ -262,21 +262,22 @@ function App() {
           feedCache.setCachedFeed(cacheKey, allArticles);
         }
 
-        // Filter and process articles (remove duplicates, sort by date)
+        // Filter and process articles (remove duplicates, respect user's sort preference)
         const filteredArticles = filterAndProcessArticles(
           allArticles,
           topicData,
           state.selectedTimeframe,
+          state.selectedSort,
           20
         );
 
         // Separate user articles from opposing perspectives
         const { userArticles, opposingArticles } = getOpposingPerspectives(
           state.selectedSources.map(id => {
-            const source = NEWS_SOURCES.find(s => s.id === id);
-            return source?.name || '';
-          }),
-          filteredArticles
+            return state.availableSources.find(s => s.id === id);
+          }).filter(Boolean) as NewsSource[],
+          filteredArticles,
+          state.selectedSort
         );
 
         setState(prev => ({
@@ -347,13 +348,17 @@ function App() {
           allArticles,
           topicData,
           state.selectedTimeframe,
+          'publishedAt', // RSS mode always sorts by date
           20 // Max 20 articles per source
         )
 
         // Separate user articles from opposing perspectives
         const { userArticles, opposingArticles } = getOpposingPerspectives(
-          state.selectedSources,
-          filteredArticles
+          state.selectedSources.map(id => {
+            return state.availableSources.find(s => s.id === id);
+          }).filter(Boolean) as NewsSource[],
+          filteredArticles,
+          'publishedAt'
         )
 
         setState(prev => ({
@@ -543,8 +548,9 @@ function App() {
                         // Process demo articles
                         const topicData = TOPICS.find(t => t.topic === 'Climate Change')
                         if (topicData) {
-                          const filtered = filterAndProcessArticles(demoArticles, topicData, 7, 20)
-                          const { userArticles, opposingArticles } = getOpposingPerspectives(['cnn'], filtered)
+                          const filtered = filterAndProcessArticles(demoArticles, topicData, 7, 'publishedAt', 20)
+                          const cnnSource = NEWS_SOURCES.find(s => s.id === 'cnn')
+                          const { userArticles, opposingArticles } = getOpposingPerspectives(cnnSource ? [cnnSource] : [], filtered, 'publishedAt')
                           
                           setState(prev => ({
                             ...prev,
