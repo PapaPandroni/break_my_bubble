@@ -5,10 +5,11 @@ This directory contains static data configurations used throughout the BreakMyBu
 ## Overview
 
 The data directory provides:
-- **Static News Sources**: Curated list of news outlets with political lean classifications
+- **Static News Sources**: Curated list of news outlets with political lean classifications (baseline for dynamic system)
 - **Topic Keywords**: Keyword mappings for content filtering
-- **Time Options**: Predefined time range configurations
+- **Time Options**: Predefined time range configurations with explicit days property
 - **Reference Data**: Structured data for consistent application behavior
+- **Dynamic Source Fallbacks**: Stable fallback data when dynamic source fetching fails
 
 ## File Structure
 
@@ -225,13 +226,14 @@ export const TOPICS: TopicKeywords[] = [
 #### Time Range Options
 ```typescript
 export const TIME_OPTIONS: TimeOption[] = [
-  { label: '24 hours', value: 1 },
-  { label: '3 days', value: 3 },
-  { label: '1 week', value: 7 },
-  { label: '2 weeks', value: 14 },
-  { label: '1 month', value: 30 },
+  { label: '24 hours', value: 1, days: 1 },
+  { label: '3 days', value: 3, days: 3 },
+  { label: '1 week', value: 7, days: 7 },
+  { label: '2 weeks', value: 14, days: 14 },
+  { label: '1 month', value: 30, days: 30 },
 ]
 ```
+*Note: Added explicit `days` property for improved date calculations and type safety.*
 
 ## Data Validation and Quality
 
@@ -266,11 +268,12 @@ Topic keywords are chosen based on:
 - Political lean used for visual categorization
 - Credibility scores influence source recommendations
 
-### In NewsAPI Mode  
-- Static sources provide fallback when dynamic sources fail
-- NewsAPI IDs enable API-based article fetching
-- Political lean provides baseline for dynamic source classification
-- Credibility scores complement dynamic source evaluation
+### In NewsAPI Mode (Dynamic Source System)
+- **Fallback Foundation**: Static sources provide reliable fallback when dynamic sources fail
+- **API Integration**: NewsAPI IDs enable API-based article fetching
+- **Classification Baseline**: Political lean provides baseline for dynamic source classification
+- **Quality Assessment**: Credibility scores complement dynamic source evaluation
+- **Unknown Source Handling**: System now defaults to 'unknown' classification instead of misleading 'center' for unrecognized sources
 
 ## Data Management
 

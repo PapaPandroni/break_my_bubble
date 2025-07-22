@@ -164,12 +164,13 @@ export interface PaginatedResults {
 ## UI Component Types
 
 ### **TimeOption**
-Time range option for user selection.
+Time range option for user selection with explicit days property.
 
 ```typescript
 export interface TimeOption {
   label: string;           // Display text ("24 hours", "1 week")
   value: number;           // Days as number (1, 7, 30)
+  days: number;           // Explicit days property for date calculations
 }
 ```
 

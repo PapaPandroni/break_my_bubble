@@ -65,10 +65,12 @@ export const unifiedSourceService = {
 ```
 
 ### **newsApiService.ts**
-**Purpose**: Complete NewsAPI.org integration with full feature support
+**Purpose**: Complete NewsAPI.org integration with dynamic source classification
 
 **Key Features**:
 - Full `/everything` and `/sources` endpoint integration
+- **Dynamic Source Classification**: Uses `availableSources` parameter instead of static maps
+- **Unknown Source Handling**: Honest 'unknown' classification instead of misleading 'center'
 - Advanced search parameter handling
 - Pagination support (page/pageSize)
 - Sort options: relevancy, publishedAt, popularity
@@ -76,13 +78,24 @@ export const unifiedSourceService = {
 - Date range filtering with custom ranges
 - Domain include/exclude filtering
 - Rate limiting and quota management
-- Comprehensive error handling
+- Comprehensive error handling with fallback strategies
 
-**API**:
+**Dynamic Classification**:
 ```typescript
-export async function fetchArticlesByTopic(sources: string[], topic: string, options: NewsAPIOptions): Promise<PaginatedResults>
-export async function searchAllSources(query: string, options: SearchOptions): Promise<Article[]>
-export async function validateAPIKey(): Promise<boolean>
+function mapNewsAPIToArticle(apiArticle: NewsAPIArticle, availableSources: NewsSource[]): Article {
+  let sourceInfo = availableSources.find(source => 
+    source.newsApiId === apiArticle.source.id ||
+    source.name.toLowerCase() === apiArticle.source.name.toLowerCase()
+  );
+  const politicalLean = sourceInfo?.politicalLean || 'unknown'; // Changed from 'center'
+}
+```
+
+**Enhanced API**:
+```typescript
+export async function fetchArticlesByTopic(topic: string, keywords: string[], sources: string[], timeframeDays: number, availableSources: NewsSource[], languages?: NewsLanguage[], sortBy?: NewsSortBy): Promise<PaginatedResults>
+export async function searchAllSources(keywords: string[], timeframeDays: number, availableSources: NewsSource[], excludeSources?: string[], languages?: NewsLanguage[], sortBy?: NewsSortBy): Promise<PaginatedResults>
+export async function checkAPIStatus(): Promise<{ valid: boolean; remaining?: number; limit?: number }>
 ```
 
 **Environment Variables**:
@@ -134,21 +147,39 @@ const POLITICAL_LEAN_MAPPING: PoliticalLeanMapping = {
 ```
 
 ### **filterService.ts**
-**Purpose**: Article filtering, processing, and opposing perspective logic
+**Purpose**: Article filtering, processing, and intelligent opposing perspective logic
 
 **Key Features**:
 - Advanced keyword matching with relevance scoring
 - Date range filtering with timezone handling
 - Political perspective analysis and categorization
-- Opposing perspective discovery algorithms
+- **Intelligent Opposition Ranking**: Political lean distance scoring (0-100 points)
+- **User Political Lean Detection**: Credibility-weighted source analysis
+- **Smart Sort Preservation**: Maintains NewsAPI sort preferences (relevancy/recent/popular)
 - Article deduplication based on title similarity
 - Content quality filtering
 
-**API**:
+**Intelligent Ranking System**:
 ```typescript
-export function filterAndProcessArticles(articles: Article[], topic: string, timeframe: number): Article[]
-export function getOpposingPerspectives(userArticles: Article[], allArticles: Article[]): Article[]
-export function calculateRelevanceScore(article: Article, keywords: string[]): number
+const OPPOSITION_MATRIX = {
+  'right': {
+    'left': 100,      // Maximum opposition
+    'lean-left': 85,
+    'center': 70,
+    'lean-right': 20,
+    'right': 0,
+    'unknown': 30
+  },
+  // ... complete matrix for all political leans
+}
+```
+
+**Enhanced API**:
+```typescript
+export function filterAndProcessArticles(articles: Article[], topic: TopicKeywords, timeframe: number, sortBy: NewsSortBy): Article[]
+export function getOpposingPerspectives(userSources: NewsSource[], allArticles: Article[], sortBy: NewsSortBy): { userArticles: Article[], opposingArticles: Article[] }
+export function detectUserPoliticalLean(selectedSources: NewsSource[]): { primaryLean: PoliticalLean, confidence: number, distribution: Record<PoliticalLean, number> }
+export function calculateTopicRelevance(article: Article, keywords: TopicKeywords): number
 ```
 
 ## Utility Services

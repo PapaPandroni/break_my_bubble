@@ -30,12 +30,16 @@ export interface Article {
 
 export interface TopicKeywords {
   topic: string
-  keywords: string[]
+  keywords: string[] // Legacy support - will be deprecated
+  multiLanguageKeywords?: Record<NewsLanguage, string[]> // New multi-language support
+  fallbackKeywords?: string[] // English fallback when translation unavailable
+  customSearch?: boolean // Indicates if this is a custom search topic
 }
 
 export interface UserSelection {
   sources: string[]
   topic: string
+  customSearchTerms?: string[] // User-defined search terms
   timeframe: number // days
   languages: NewsLanguage[]
   domains?: string[]

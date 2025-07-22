@@ -1,4 +1,4 @@
-import { Article, TopicKeywords, NewsSortBy, NewsSource } from '../types'
+import { Article, TopicKeywords, NewsSortBy, NewsSource, NewsLanguage } from '../types'
 import { isWithinTimeframe } from '../utils/dateUtils'
 import { normalizeKeyword, removeDuplicateArticles } from '../utils/helpers'
 
@@ -113,9 +113,45 @@ const calculateOppositionScore = (
 
 export const filterArticlesByTopic = (
   articles: Article[],
-  topicKeywords: TopicKeywords
+  topicKeywords: TopicKeywords,
+  selectedLanguages?: NewsLanguage[],
+  customSearchTerms?: string[]
 ): Article[] => {
-  const normalizedKeywords = topicKeywords.keywords.map(normalizeKeyword)
+  // Get keywords based on language selection and multi-language support
+  let keywordsToUse: string[] = []
+  
+  // Handle custom search terms
+  if (customSearchTerms && customSearchTerms.length > 0) {
+    keywordsToUse = customSearchTerms
+  } else {
+    // Use multi-language keywords if available
+    if (topicKeywords.multiLanguageKeywords && selectedLanguages && selectedLanguages.length > 0) {
+      // Collect keywords from all selected languages
+      selectedLanguages.forEach(lang => {
+        const langKeywords = topicKeywords.multiLanguageKeywords?.[lang]
+        if (langKeywords) {
+          keywordsToUse.push(...langKeywords)
+        }
+      })
+      
+      // If no keywords found for selected languages, fall back to English or legacy keywords
+      if (keywordsToUse.length === 0) {
+        const englishKeywords = topicKeywords.multiLanguageKeywords['en'] || topicKeywords.fallbackKeywords
+        if (englishKeywords) {
+          keywordsToUse = englishKeywords
+        } else {
+          // Final fallback to legacy keywords
+          keywordsToUse = topicKeywords.keywords
+        }
+      }
+    } else {
+      // Fall back to legacy keywords system
+      keywordsToUse = topicKeywords.keywords
+    }
+  }
+
+  // Normalize keywords for searching
+  const normalizedKeywords = keywordsToUse.map(normalizeKeyword)
 
   return articles.filter((article) => {
     const titleLower = normalizeKeyword(article.title)
@@ -142,10 +178,12 @@ export const filterAndProcessArticles = (
   topicKeywords: TopicKeywords,
   timeframeDays: number,
   sortBy: NewsSortBy,
-  maxArticlesPerSource = 20
+  maxArticlesPerSource = 20,
+  selectedLanguages?: NewsLanguage[],
+  customSearchTerms?: string[]
 ): Article[] => {
-  // Filter by topic
-  let filtered = filterArticlesByTopic(articles, topicKeywords)
+  // Filter by topic using language-aware filtering
+  let filtered = filterArticlesByTopic(articles, topicKeywords, selectedLanguages, customSearchTerms)
 
   // Filter by timeframe
   filtered = filterArticlesByTimeframe(filtered, timeframeDays)

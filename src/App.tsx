@@ -23,6 +23,7 @@ import ResultsDisplay from './components/ResultsDisplay'
 interface AppState {
   selectedSources: string[]
   selectedTopic: string
+  customSearchTerms: string[]
   selectedTimeframe: number
   selectedDateRange: DateRange
   selectedLanguages: NewsLanguage[]
@@ -48,6 +49,7 @@ function App() {
   const [state, setState] = useState<AppState>({
     selectedSources: [],
     selectedTopic: '',
+    customSearchTerms: [], // Start with no custom search terms
     selectedTimeframe: 7, // Default to 1 week (for RSS mode)
     selectedDateRange: { type: 'preset', days: 7, label: 'Last week' }, // Default for NewsAPI mode
     selectedLanguages: [], // Start with empty language selection
@@ -63,7 +65,10 @@ function App() {
     allSourcesLoaded: !useNewsAPI, // If not using NewsAPI, we already have all sources
   })
 
-  const canAnalyze = state.selectedSources.length >= 1 && state.selectedTopic
+  const canAnalyze = state.selectedSources.length >= 1 && (
+    (state.selectedTopic && state.selectedTopic !== 'Custom Search') ||
+    (state.selectedTopic === 'Custom Search' && state.customSearchTerms.length > 0)
+  )
 
   // Initialize sources with optimistic loading
   useEffect(() => {
@@ -140,6 +145,7 @@ function App() {
     setState(prev => ({
       selectedSources: [],
       selectedTopic: '',
+      customSearchTerms: [],
       selectedTimeframe: 7,
       selectedDateRange: { type: 'preset', days: 7, label: 'Last week' },
       selectedLanguages: [],
@@ -208,15 +214,24 @@ function App() {
     if (useNewsAPI) {
       // Use NewsAPI implementation
       try {
-        // Get selected topic data
-        const topicData = TOPICS.find(t => t.topic === state.selectedTopic)
+        // Get selected topic data (handle Custom Search case)
+        let topicData = TOPICS.find(t => t.topic === state.selectedTopic)
+        if (!topicData && state.selectedTopic === 'Custom Search') {
+          // Create synthetic topic data for custom search
+          topicData = {
+            topic: 'Custom Search',
+            keywords: [], // Legacy - not used for custom search
+            customSearch: true
+          }
+        }
         if (!topicData) {
           throw new Error('Selected topic not found')
         }
 
         // Check cache first
         const timeframeDays = state.selectedDateRange.days
-        const cacheKey = `newsapi-${state.selectedTopic}-${state.selectedSources.join(',')}-${timeframeDays}-${state.selectedLanguages.join(',')}-${state.selectedCountries.join(',')}-${state.selectedSort}`;
+        const customSearchKey = state.customSearchTerms.length > 0 ? state.customSearchTerms.join(',') : ''
+        const cacheKey = `newsapi-${state.selectedTopic}-${state.selectedSources.join(',')}-${timeframeDays}-${state.selectedLanguages.join(',')}-${state.selectedCountries.join(',')}-${state.selectedSort}-${customSearchKey}`;
         const cached = feedCache.getCachedFeed(cacheKey);
         
         let allArticles: Article[] = [];
@@ -224,10 +239,15 @@ function App() {
         if (cached) {
           allArticles = cached;
         } else {
+          // Determine keywords to use (custom search terms or topic keywords)
+          const keywordsToUse = state.customSearchTerms.length > 0 
+            ? state.customSearchTerms 
+            : topicData.keywords;
+
           // Fetch articles from user's selected sources (using pagination)
           const userResults = await fetchArticlesByTopic(
             state.selectedTopic,
-            topicData.keywords,
+            keywordsToUse,
             state.selectedSources,
             timeframeDays,
             state.availableSources,
@@ -241,7 +261,7 @@ function App() {
           
           // Fetch articles from all other sources for comparison
           const opposingResults = await searchAllSources(
-            topicData.keywords,
+            keywordsToUse,
             timeframeDays,
             state.availableSources,
             state.selectedSources.map(id => {
@@ -268,7 +288,9 @@ function App() {
           topicData,
           state.selectedTimeframe,
           state.selectedSort,
-          20
+          20,
+          state.selectedLanguages,
+          state.customSearchTerms.length > 0 ? state.customSearchTerms : undefined
         );
 
         // Separate user articles from opposing perspectives
@@ -337,8 +359,16 @@ function App() {
         // Combine cached and fetched articles
         const allArticles = [...cachedArticles, ...fetchedArticles]
 
-        // Get selected topic data
-        const topicData = TOPICS.find(t => t.topic === state.selectedTopic)
+        // Get selected topic data (handle Custom Search case)
+        let topicData = TOPICS.find(t => t.topic === state.selectedTopic)
+        if (!topicData && state.selectedTopic === 'Custom Search') {
+          // Create synthetic topic data for custom search
+          topicData = {
+            topic: 'Custom Search',
+            keywords: [], // Legacy - not used for custom search
+            customSearch: true
+          }
+        }
         if (!topicData) {
           throw new Error('Selected topic not found')
         }
@@ -349,7 +379,9 @@ function App() {
           topicData,
           state.selectedTimeframe,
           'publishedAt', // RSS mode always sorts by date
-          20 // Max 20 articles per source
+          20, // Max 20 articles per source
+          state.selectedLanguages,
+          state.customSearchTerms.length > 0 ? state.customSearchTerms : undefined
         )
 
         // Separate user articles from opposing perspectives
@@ -432,6 +464,10 @@ function App() {
                   selectedTopic={state.selectedTopic}
                   onTopicChange={(topic) => 
                     setState(prev => ({ ...prev, selectedTopic: topic }))
+                  }
+                  customSearchTerms={state.customSearchTerms}
+                  onCustomSearchTermsChange={(terms) =>
+                    setState(prev => ({ ...prev, customSearchTerms: terms }))
                   }
                 />
               </section>

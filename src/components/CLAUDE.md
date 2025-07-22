@@ -41,8 +41,10 @@ App.tsx
 #### **ResultsDisplay.tsx**
 - Main results presentation component
 - Side-by-side layout for user's sources vs opposing perspectives
+- **Intelligent Opposition Ranking**: Articles prioritized by political distance and credibility
 - Article cards with images, titles, descriptions, and metadata
-- Color-coded by political lean (left/center/right/lean-left/lean-right)
+- Color-coded by political lean (left/center/right/lean-left/lean-right/unknown)
+- **Unknown Source Handling**: Proper display for sources with 'unknown' political classification
 - External links with proper attribution
 - Enhanced features in NewsAPI mode: author, images, content previews
 
@@ -50,6 +52,8 @@ App.tsx
 
 #### **SourceInput.tsx**
 - Multi-source selection interface (1-5 sources)
+- **Enhanced UX**: Fixed removal restrictions - users can now remove all sources if needed
+- **Improved Dropdown**: Automatically closes after source selection
 - Search and filter functionality
 - Integration with both static and dynamic sources
 - Visual feedback for selected sources
@@ -93,10 +97,11 @@ These components are only visible/functional when `VITE_USE_NEWS_API=true`:
 
 #### **SortSelector.tsx**
 - Three sorting options:
-  - **Relevancy**: Best matches for search terms
-  - **Published At**: Most recent articles first
-  - **Popularity**: Most popular/shared articles
+  - **Relevancy**: Best matches for search terms (works with intelligent opposition ranking)
+  - **Published At**: Most recent articles first (preserves sort while adding opposition intelligence)
+  - **Popularity**: Most popular/shared articles (enhanced with political distance scoring)
 - Clear visual feedback for current selection
+- **Intelligent Integration**: Works seamlessly with the opposition ranking system while preserving user's chosen sort preference
 
 ### Utility Components
 
