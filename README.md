@@ -1,182 +1,290 @@
 # BreakMyBubble 🎯
 
-A web application that helps users identify their news consumption "bubble" by comparing headlines from their preferred news sources against opposing perspectives on chosen topics.
+A sophisticated news analysis web application that helps users identify their news consumption "bubble" by comparing headlines from their preferred news sources against opposing perspectives on chosen topics. Features dual-mode operation with RSS feeds and comprehensive NewsAPI integration.
 
-![BreakMyBubble Screenshot](https://via.placeholder.com/800x400/3B82F6/FFFFFF?text=BreakMyBubble+Demo)
+![BreakMyBubble](https://img.shields.io/badge/Status-Production%20Ready-green) ![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue) ![NewsAPI](https://img.shields.io/badge/NewsAPI-Integrated-orange)
 
-## 🌟 Features
+## 🌟 Key Features
 
-- **Source Comparison**: Select 1-5 preferred news sources and discover how other outlets cover the same topics
-- **Political Perspective Analysis**: Visual color coding for left (blue), center (gray), and right (red) leaning sources
-- **Topic-Based Filtering**: Choose from 5 key topics with intelligent keyword matching
-- **Flexible Time Ranges**: Filter articles from 24 hours to 1 month
-- **Smart Caching**: 30-minute cache system to optimize performance
-- **Mobile Responsive**: Clean, modern interface that works on all devices
-- **Accessibility First**: Full keyboard navigation and screen reader support
+### Core Functionality
+- **Dual-Mode Operation**: RSS feeds (basic) + NewsAPI (advanced) with automatic fallback
+- **Source Comparison**: Select 1-5 preferred news sources and discover opposing perspectives  
+- **5-Point Political Analysis**: Enhanced political lean classification (left/lean-left/center/lean-right/right)
+- **Topic-Based Filtering**: 5 key topics with intelligent keyword matching
+- **International Coverage**: 27+ classified international news sources
+
+### Advanced NewsAPI Features
+- **Multi-Language Support**: 14 languages with native names and flags
+- **Global Coverage**: 54 countries with dynamic source discovery
+- **Advanced Filtering**: Sort by relevancy, date, or popularity
+- **Custom Date Ranges**: Precise date filtering vs preset time ranges
+- **Enhanced Articles**: Images, author info, and content previews
+- **Smart Caching**: Optimized performance with intelligent cache strategies
+
+### User Experience
+- **Mobile-First Design**: Responsive across all devices
+- **Accessibility**: Full keyboard navigation and screen reader support
+- **Performance**: Sub-second load times with smart caching
+- **Error Recovery**: Graceful fallbacks and user-friendly error handling
 
 ## 🚀 Live Demo
 
-[View Live Demo](your-deployment-url-here) *(Replace with your actual deployment URL)*
-
-## 🛠️ Tech Stack
-
-- **Frontend**: React 18 + TypeScript
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS
-- **State Management**: React Hooks
-- **HTTP Client**: Native Fetch API
-- **RSS Parsing**: DOMParser (native)
-- **Deployment Ready**: Netlify/Vercel compatible
-
-## 📦 Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/break-my-bubble.git
-   cd break-my-bubble
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Start development server**
-   ```bash
-   npm run dev
-   ```
-
-4. **Open your browser**
-   ```
-   http://localhost:5173
-   ```
-
-## 🏗️ Build for Production
-
-```bash
-# Build the app
-npm run build
-
-# Preview the build
-npm run preview
-```
-
-## 📱 How It Works
-
-1. **Select Your Sources**: Choose 1-5 news sources you typically read
-2. **Pick a Topic**: Select from Climate Change, Healthcare, Immigration, Economy, or Technology  
-3. **Set Time Range**: Choose how far back to search for articles (24 hours to 1 month)
-4. **Break Your Bubble**: Get side-by-side comparison of your sources vs. opposing perspectives
-5. **Explore**: Read articles from different viewpoints to broaden your understanding
+[Deploy your own instance](#deployment) or explore the codebase to understand the advanced news analysis architecture.
 
 ## 📊 Supported News Sources
 
-### Left-Leaning
-- CNN
-- MSNBC  
-- The Guardian
-- NPR
+### Recent International Expansion
+**Lean-Left**: CNN Spanish, The Hindu (India), Infobae (Argentina), Ynet (Israel)  
+**Center**: BBC News, Reuters, Associated Press, Blasting News (Brazil), SABQ (Saudi Arabia)  
+**Lean-Right**: Wall Street Journal, Aftenposten (Norway), Svenska Dagbladet (Sweden), News.com.au  
+**Right**: Fox News, Globo (Brazil), La Gaceta (Argentina)
 
-### Center
-- BBC News
-- Reuters
-- Associated Press
+*Plus 54 countries worth of dynamically discovered sources via NewsAPI integration.*
 
-### Right-Leaning
-- Fox News
-- Wall Street Journal
-- New York Post
+## 🛠️ Tech Stack
 
-## 🔧 Architecture
+### Frontend Architecture
+- **React 18** + **TypeScript** (100% type coverage)
+- **Vite** for lightning-fast builds and hot reload
+- **Tailwind CSS** with custom political lean color palette
+- **Native APIs**: Fetch, DOMParser, LocalStorage
+
+### Data & Services
+- **NewsAPI.org** integration with full feature support
+- **RSS Parsing** with CORS proxy fallback
+- **Smart Caching**: 30-minute feeds, 24-hour dynamic sources
+- **Advanced Error Handling** with exponential backoff
+
+### Development Tools
+- **ESLint + TypeScript** for code quality
+- **Claude Code Integration** with comprehensive documentation
+- **Automated Scripts** for data management and validation
+
+## 📦 Quick Start
+
+### Option 1: Basic RSS Mode (No Setup Required)
+```bash
+git clone https://github.com/yourusername/break-my-bubble.git
+cd break-my-bubble
+npm install
+npm run dev
+```
+Access at `http://localhost:5173` - Works immediately with RSS feeds!
+
+### Option 2: Full NewsAPI Mode (Recommended)
+1. **Get NewsAPI Key**: Free at [newsapi.org/register](https://newsapi.org/register)
+2. **Configure Environment**:
+   ```bash
+   # Create .env file
+   echo "VITE_USE_NEWS_API=true" >> .env
+   echo "VITE_NEWS_API_KEY=your_api_key_here" >> .env
+   ```
+3. **Run Application**:
+   ```bash
+   npm install
+   npm run dev
+   ```
+4. **Enjoy Full Features**: Multi-language, 54 countries, advanced filtering!
+
+## 🏗️ Production Deployment
+
+### Build for Production
+```bash
+npm run build    # Creates optimized build in /dist
+npm run preview  # Preview production build locally
+```
+
+### Environment Configuration
+```bash
+# Required for NewsAPI mode
+VITE_USE_NEWS_API=true
+VITE_NEWS_API_KEY=your_production_api_key
+
+# Optional configurations
+VITE_DEBUG_MODE=false  # Disable debug features
+```
+
+### Deployment Platforms
+- **Netlify**: Automatic deployment from Git with environment variables
+- **Vercel**: Zero-config deployment with built-in optimizations  
+- **AWS S3 + CloudFront**: Enterprise-scale static hosting
+- **Docker**: Containerized deployment for any cloud platform
+
+## 🎯 How It Works
+
+### User Journey
+1. **Choose Mode**: Automatic detection of NewsAPI availability
+2. **Select Sources**: 1-5 news sources from curated list or dynamic discovery
+3. **Advanced Filtering**: Language, country, date range, sort preferences (NewsAPI mode)  
+4. **Pick Topic**: Climate Change, Healthcare, Immigration, Economy, or Technology
+5. **Analyze Perspectives**: Side-by-side comparison with opposing viewpoints
+6. **Explore Articles**: Enhanced articles with images, authors, and content previews
+
+### Technical Architecture
+```
+┌─────────────────┐
+│   React App     │
+└─────────┬───────┘
+          │
+┌─────────▼───────┐
+│ Unified Service │ ◄── Dual-mode operation
+└─────────┬───────┘
+          │
+    ┌─────┼─────┐
+    ▼     ▼     ▼
+┌─────┐ ┌────┐ ┌────────────┐
+│ RSS │ │API │ │ Dynamic    │
+│Mode │ │Mode│ │ Sources    │
+└─────┘ └────┘ └────────────┘
+    │     │          │
+    └─────┼──────────┘
+          ▼
+   ┌─────────────┐
+   │ Filter &    │
+   │ Analysis    │
+   └─────────────┘
+```
+
+## 📁 Project Structure
 
 ```
-src/
-├── components/          # React components
-│   ├── Header.tsx
-│   ├── SourceInput.tsx
-│   ├── TopicSelector.tsx
-│   ├── TimeSlider.tsx
-│   ├── LoadingState.tsx
-│   ├── ErrorMessage.tsx
-│   └── ResultsDisplay.tsx
-├── services/           # Business logic
-│   ├── rssService.ts   # RSS feed parsing
-│   ├── filterService.ts # Content filtering
-│   ├── corsProxy.ts    # CORS handling
-│   └── cacheService.ts # Caching system
-├── data/              # Static data
-│   ├── newsSources.ts
-│   └── topics.ts
-├── utils/             # Helper functions
-│   ├── dateUtils.ts
-│   └── helpers.ts
-├── types/             # TypeScript interfaces
-│   └── index.ts
-└── App.tsx           # Main application
+break-my-bubble/
+├── src/
+│   ├── components/         # 12 React components
+│   │   ├── CountrySelector.tsx    # 54 countries
+│   │   ├── LanguageSelector.tsx   # 14 languages  
+│   │   ├── DateRangePicker.tsx    # Custom dates
+│   │   └── ResultsDisplay.tsx     # Enhanced articles
+│   ├── services/          # 9 business logic services
+│   │   ├── newsApiService.ts      # Full NewsAPI integration
+│   │   ├── dynamicSourceService.ts # Source discovery
+│   │   ├── filterService.ts       # Analysis algorithms
+│   │   └── unifiedSourceService.ts # Dual-mode orchestration
+│   ├── data/              # Static configuration
+│   ├── types/             # TypeScript definitions
+│   └── utils/             # Helper functions
+├── scripts/               # Automation tools
+├── .claude/              # Claude Code configuration
+└── docs/                 # Comprehensive documentation
 ```
 
-## 🎨 Key Technical Features
+*Each directory includes detailed CLAUDE.md documentation for developers.*
 
-- **RSS Feed Parsing**: Handles both RSS 2.0 and Atom formats with robust error handling
-- **CORS Proxy**: Uses `api.allorigins.win` to bypass browser CORS restrictions
-- **Smart Caching**: Local storage caching with 30-minute expiration
-- **Deduplication**: Intelligent article similarity detection
-- **Content Filtering**: Advanced keyword matching with relevance scoring
-- **Error Resilience**: Graceful handling of failed feeds and network issues
+## 🔧 Development Features
 
-## 🚧 Technical Challenges Solved
+### Debug Mode (Development Only)
+When `NODE_ENV=development`, access debug tools:
+- RSS feed validation
+- NewsAPI integration testing  
+- Topic filtering analysis
+- Cache management
+- Source validation status
 
-1. **CORS Restrictions**: RSS feeds are blocked by browser CORS policies - solved with proxy service
-2. **RSS Format Variations**: Different sources use varying XML structures - robust parsing handles both RSS and Atom
-3. **Performance**: Multiple concurrent feed requests - implemented caching and request timeouts
-4. **Content Quality**: Accurate keyword matching without false positives - advanced filtering algorithms
+### Scripts & Automation
+```bash
+npm run dev          # Development server
+npm run build        # Production build
+npm run lint         # Code quality check
+npm run preview      # Preview production build
+npm run test:newsapi # NewsAPI integration test
+```
 
-## 🔮 Future Enhancements
+### Data Management
+```bash
+node scripts/fetch-newsapi-sources.js  # Update source data
+node scripts/validate-sources.js       # Validate RSS feeds
+```
 
-- [ ] AI-powered content analysis for deeper perspective comparison
-- [ ] User accounts and personalized source recommendations
-- [ ] Social sharing of perspective comparisons
-- [ ] Browser extension for real-time bubble detection
-- [ ] API integration for more news sources
-- [ ] Sentiment analysis visualization
-- [ ] Historical trend analysis
+## 🌍 International Features
+
+### Supported Languages (NewsAPI Mode)
+🇺🇸 English • 🇪🇸 Spanish • 🇫🇷 French • 🇩🇪 German • 🇮🇹 Italian • 🇵🇹 Portuguese • 🇷🇺 Russian  
+🇸🇦 Arabic • 🇮🇱 Hebrew • 🇳🇱 Dutch • 🇳🇴 Norwegian • 🇸🇪 Swedish • 🇨🇳 Chinese • 🇵🇰 Urdu
+
+### Global Coverage
+- **54 Countries** with localized news sources
+- **Dynamic Discovery** of new sources via NewsAPI
+- **Political Lean Classification** adapted for international media
+- **Cultural Context** awareness in source categorization
+
+## 🔐 Privacy & Ethics
+
+### Data Privacy
+- **No User Tracking**: Stateless application with no personal data collection
+- **Local Storage Only**: Cache data stays on user's device
+- **No Analytics**: Privacy-first approach with no third-party tracking
+- **Open Source**: Full transparency in data handling
+
+### Editorial Standards  
+- **Bias Transparency**: Clear political lean classifications with sources
+- **Source Attribution**: All articles link to original sources
+- **Credibility Scores**: Transparency in source quality assessment
+- **Disclaimer**: Educational tool for media literacy, not political alignment
 
 ## 🤝 Contributing
 
+### Development Setup
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create feature branch: `git checkout -b feature/amazing-feature`
+3. Follow TypeScript strict mode and ESLint rules
+4. Add tests for new functionality  
+5. Update documentation in relevant CLAUDE.md files
+6. Submit pull request with detailed description
+
+### Contribution Areas
+- **Source Classification**: Help classify international news sources
+- **Language Support**: Add new language packs and translations
+- **Performance**: Optimize caching and loading strategies
+- **Features**: Enhance analysis algorithms and user experience
+- **Testing**: Expand test coverage and edge case handling
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## ⚠️ Disclaimer
-
-- Source bias ratings are provided for educational purposes only
-- All articles link to their original sources for full context
-- This tool encourages media literacy, not political alignment
-- Political lean classifications are based on generally accepted media bias assessments
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-- News sources for providing RSS feeds
-- [AllOrigins](https://allorigins.win/) for CORS proxy service
-- [Tailwind CSS](https://tailwindcss.com/) for styling framework
-- [Vite](https://vitejs.dev/) for build tooling
+### Data Sources
+- [NewsAPI.org](https://newsapi.org) for comprehensive news data
+- [AllOrigins](https://allorigins.win) for CORS proxy services
+- Independent media bias research organizations
 
-## 📞 Support
+### Technology Partners
+- [Vite](https://vitejs.dev) for build tooling excellence
+- [Tailwind CSS](https://tailwindcss.com) for utility-first styling
+- [TypeScript](https://typescriptlang.org) for type safety
 
-If you have any questions or run into issues:
+### Community
+- Media literacy educators and researchers
+- Open source contributors and maintainers
+- Users providing feedback and feature requests
 
-1. Check the [Issues](https://github.com/yourusername/break-my-bubble/issues) page
-2. Create a new issue with detailed description
-3. Include browser version and error messages if applicable
+## ⚠️ Important Disclaimers
+
+- **Educational Purpose**: This tool is designed for media literacy education
+- **Political Neutrality**: Classifications based on academic media bias research  
+- **Source Responsibility**: All articles link to original sources for full context
+- **Critical Thinking**: Encourages analysis of all news sources, regardless of classification
+- **API Limitations**: NewsAPI free tier has usage limits; see their documentation
+
+## 📞 Support & Contact
+
+### Technical Support
+1. **Documentation**: Check directory-specific CLAUDE.md files
+2. **Issues**: [GitHub Issues](https://github.com/yourusername/break-my-bubble/issues)
+3. **Discussions**: [GitHub Discussions](https://github.com/yourusername/break-my-bubble/discussions)
+
+### Development Questions
+- Include environment details (Node version, OS)
+- Provide error messages and logs
+- Specify which mode (RSS/NewsAPI) you're using
+- Include reproduction steps for bugs
 
 ---
 
-**Built with ❤️ for media literacy and informed citizenship**
+**Built with ❤️ for media literacy, informed citizenship, and healthy democratic discourse.**
 
-*Remember: The best way to break your bubble is to actively seek diverse perspectives and think critically about all sources of information.*
+*"The best way to break your news bubble is to actively seek diverse perspectives and think critically about all sources of information."*
+
+**Version 2.1** - International Sources & Enhanced Classification System  
+**Last Updated**: July 2025

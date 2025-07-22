@@ -70,8 +70,11 @@ export const filterAndProcessArticles = (
 export const groupArticlesByPoliticalLean = (articles: Article[]) => {
   const grouped = {
     left: [] as Article[],
+    'lean-left': [] as Article[],
     center: [] as Article[],
+    'lean-right': [] as Article[],
     right: [] as Article[],
+    unknown: [] as Article[],
   }
 
   articles.forEach((article) => {

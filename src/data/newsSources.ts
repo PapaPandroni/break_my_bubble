@@ -20,13 +20,14 @@ export const NEWS_SOURCES: NewsSource[] = [
     credibility: 0.6,
     website: 'msnbc.com',
   },
+  
+  // Lean Left (updated per AllSides ratings)
   {
     id: 'guardian',
     name: 'The Guardian',
     rssUrl: 'https://www.theguardian.com/rss',
-    // Note: Guardian UK may not be available in NewsAPI, will be validated at runtime
     newsApiId: 'the-guardian-uk',
-    politicalLean: 'left',
+    politicalLean: 'lean-left',
     credibility: 0.8,
     website: 'theguardian.com',
   },
@@ -34,8 +35,7 @@ export const NEWS_SOURCES: NewsSource[] = [
     id: 'npr',
     name: 'NPR',
     rssUrl: 'https://feeds.npr.org/1001/rss.xml',
-    // Note: NPR may not be available in NewsAPI, using RSS as fallback
-    politicalLean: 'center',
+    politicalLean: 'lean-left', // Corrected from center per AllSides
     credibility: 0.9,
     website: 'npr.org',
   },
@@ -69,6 +69,17 @@ export const NEWS_SOURCES: NewsSource[] = [
     website: 'apnews.com',
   },
 
+  // Lean Right (updated per AllSides ratings)
+  {
+    id: 'wsj',
+    name: 'Wall Street Journal',
+    rssUrl: 'https://feeds.a.dj.com/rss/RSSWorldNews.xml',
+    newsApiId: 'the-wall-street-journal',
+    politicalLean: 'lean-right', // News section is lean-right per AllSides
+    credibility: 0.8,
+    website: 'wsj.com',
+  },
+
   // Right-leaning
   {
     id: 'fox',
@@ -78,15 +89,6 @@ export const NEWS_SOURCES: NewsSource[] = [
     politicalLean: 'right',
     credibility: 0.6,
     website: 'foxnews.com',
-  },
-  {
-    id: 'wsj',
-    name: 'Wall Street Journal',
-    rssUrl: 'https://feeds.a.dj.com/rss/RSSWorldNews.xml',
-    newsApiId: 'the-wall-street-journal',
-    politicalLean: 'right',
-    credibility: 0.8,
-    website: 'wsj.com',
   },
   {
     id: 'nypost',

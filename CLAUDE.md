@@ -23,10 +23,10 @@ npm run test:newsapi
 
 ## Project Status
 
-**Version**: 2.0 - Enhanced NewsAPI Integration Complete ✅  
-**Last Updated**: January 2025  
+**Version**: 2.1 - International News Sources & Enhanced Classification System ✅  
+**Last Updated**: July 2025  
 **Build Status**: ✅ Production Ready  
-**Features**: 100% NewsAPI feature set implemented
+**Features**: Expanded NewsAPI integration with 27+ classified international sources
 
 ## Architecture Overview
 
@@ -64,12 +64,12 @@ The app supports two data fetching strategies controlled by the `VITE_USE_NEWS_A
 - **CountrySelector**: 54 countries with flags, multi-selection up to 3 countries  
 - **SortSelector**: Sort by relevancy, publishedAt, or popularity
 - **DateRangePicker**: Custom date ranges or preset options (replaces TimeSlider)
-- **Enhanced ResultsDisplay**: Article images, author info, content previews
+- **Enhanced ResultsDisplay**: Article images, author info, content previews with 5-point political lean classification
 
 ### Key Services
 
 - **newsApiService.ts**: Complete NewsAPI integration with pagination, sorting, domain filtering
-- **dynamicSourceService.ts**: Dynamic source fetching with country/language filtering  
+- **dynamicSourceService.ts**: Dynamic source fetching with enhanced political lean classification (27+ international sources)
 - **rssService.ts**: RSS feed parsing with CORS proxy (fallback mode)
 - **filterService.ts**: Article filtering and opposing perspective logic
 - **cacheService.ts**: 30-minute local storage caching system
@@ -80,25 +80,29 @@ The app supports two data fetching strategies controlled by the `VITE_USE_NEWS_A
 **Static Sources** (`/src/data/newsSources.ts`):
 - RSS URL for RSS mode
 - NewsAPI ID for API mode  
-- Political lean classification (left/center/right)
-- Credibility scoring
+- 5-point political lean classification (left/lean-left/center/lean-right/right)
+- Credibility scoring (0.0-1.0)
 
 **Dynamic Sources** (NewsAPI Mode):
 - Fetched from NewsAPI `/sources` endpoint
+- Enhanced political lean mapping with 27+ classified international sources
 - Filtered by language, country, category
-- Automatically classified for political lean
+- Confidence scoring for classification accuracy
 - 24-hour caching with fallback to static sources
 
 ### State Management
 
 Uses React hooks with enhanced AppState interface:
 - Source selection (1-5 sources) with dynamic filtering
-- Multi-language selection (up to 5 languages)
+- Multi-language selection (up to 5 languages)  
 - Multi-country filtering (up to 3 countries)
 - Sort preferences (relevancy/date/popularity)
 - Custom date ranges or preset timeframes
 - Topic filtering (5 predefined topics)
 - Results display with enhanced article data
+- Available sources management (static + dynamic)
+- Loading states for sources and results
+- Error handling for network failures
 
 ### NewsAPI Features Implemented ✅
 
@@ -147,10 +151,21 @@ When `import.meta.env.DEV` is true, debug buttons are available for:
 
 - React 18 + TypeScript (100% type coverage)
 - Vite build system with optimized production builds
-- Tailwind CSS for responsive styling
+- Tailwind CSS for responsive styling with custom political lean color palette
 - Native Fetch API with comprehensive error handling
 - DOMParser for RSS parsing (fallback mode)
 - Advanced date handling and internationalization
+
+### Project Documentation Structure
+
+Each directory contains comprehensive CLAUDE.md documentation:
+- **`/src/components/`**: React component architecture and patterns
+- **`/src/services/`**: Business logic services and API integration
+- **`/src/data/`**: Static data configuration and management
+- **`/src/types/`**: TypeScript type definitions and interfaces
+- **`/src/utils/`**: Utility functions and helpers
+- **`/scripts/`**: Build and development automation scripts
+- **`.claude/`**: Claude Code configuration and permissions
 
 ### Setup Instructions
 
@@ -172,8 +187,38 @@ When `import.meta.env.DEV` is true, debug buttons are available for:
 ### Error Handling
 
 The app includes comprehensive error handling:
-- ✅ Graceful API key validation
+- ✅ Graceful API key validation with user-friendly messages
 - ✅ Automatic fallback to RSS mode when NewsAPI fails  
 - ✅ Clear user guidance for configuration issues
-- ✅ Network error recovery with retry options
+- ✅ Network error recovery with exponential backoff retry
 - ✅ Loading states and user feedback throughout
+- ✅ Service-level error boundaries and recovery mechanisms
+- ✅ Cache fallback strategies for improved reliability
+
+### International Source Classifications (Latest Update)
+
+Recently expanded political lean mapping with 14 new international sources:
+
+**Lean-Left Sources:**
+- CNN Spanish (CNN en Español) - US Spanish-language news
+- The Hindu - India's leading English newspaper  
+- Infobae - Argentina's digital news leader
+- Ynet - Israel's largest news website
+
+**Center Sources:**
+- Blasting News (BR) - Brazil's citizen journalism platform
+- SABQ - Saudi Arabia digital newspaper
+
+**Lean-Right Sources:**
+- Aftenposten - Norway's leading newspaper
+- Göteborgs-Posten - Sweden's major daily
+- The Jerusalem Post - Israel's English-language news
+- Svenska Dagbladet - Sweden's morning newspaper  
+- News.com.au - Australia's digital news platform
+- RBC - Russia's business and news outlet
+
+**Right Sources:**
+- Globo - Brazil's media conglomerate
+- La Gaceta - Argentina's conservative newspaper
+
+Each source includes credibility scores (0.5-0.8) and confidence levels (0.6-0.9) for classification accuracy.

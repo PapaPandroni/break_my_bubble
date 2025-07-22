@@ -44,14 +44,37 @@ export default function SourceInput({
     }
   }
 
-  const getPoliticalLeanColor = (lean: 'left' | 'center' | 'right') => {
+  const getPoliticalLeanColor = (lean: 'left' | 'lean-left' | 'center' | 'lean-right' | 'right' | 'unknown') => {
     switch (lean) {
       case 'left':
+        return 'bg-blue-200 text-blue-800 border-blue-400'
+      case 'lean-left':
         return 'bg-blue-100 text-blue-700 border-blue-300'
       case 'center':
         return 'bg-gray-100 text-gray-700 border-gray-300'
-      case 'right':
+      case 'lean-right':
         return 'bg-red-100 text-red-700 border-red-300'
+      case 'right':
+        return 'bg-red-200 text-red-800 border-red-400'
+      case 'unknown':
+        return 'bg-amber-100 text-amber-700 border-amber-300'
+    }
+  }
+
+  const getPoliticalLeanLabel = (lean: 'left' | 'lean-left' | 'center' | 'lean-right' | 'right' | 'unknown') => {
+    switch (lean) {
+      case 'left':
+        return 'Left'
+      case 'lean-left':
+        return 'Lean Left'
+      case 'center':
+        return 'Center'
+      case 'lean-right':
+        return 'Lean Right'
+      case 'right':
+        return 'Right'
+      case 'unknown':
+        return 'Unknown'
     }
   }
 
@@ -293,7 +316,7 @@ export default function SourceInput({
                         </div>
                         <div className="flex items-center space-x-2 ml-2">
                           <span className={`px-2 py-1 text-xs rounded-full border ${getPoliticalLeanColor(source.politicalLean)}`}>
-                            {source.politicalLean}
+                            {getPoliticalLeanLabel(source.politicalLean)}
                           </span>
                           {isSelected && (
                             <span className="text-blue-600">✓</span>

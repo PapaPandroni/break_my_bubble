@@ -43,18 +43,36 @@ const POLITICAL_LEAN_MAPPING: PoliticalLeanMapping = {
   'the-huffington-post': { lean: 'left', credibility: 0.6, confidence: 0.8 },
   'politico': { lean: 'left', credibility: 0.7, confidence: 0.7 },
   
+  // Lean-left sources
+  'cnn-es': { lean: 'lean-left', credibility: 0.7, confidence: 0.8 },
+  'the-hindu': { lean: 'lean-left', credibility: 0.8, confidence: 0.8 },
+  'infobae': { lean: 'lean-left', credibility: 0.6, confidence: 0.7 },
+  'ynet': { lean: 'lean-left', credibility: 0.7, confidence: 0.8 },
+  
   'bbc-news': { lean: 'center', credibility: 0.8, confidence: 0.9 },
   'reuters': { lean: 'center', credibility: 0.9, confidence: 0.9 },
   'associated-press': { lean: 'center', credibility: 0.9, confidence: 0.9 },
   'npr': { lean: 'center', credibility: 0.9, confidence: 0.8 },
   'usa-today': { lean: 'center', credibility: 0.7, confidence: 0.8 },
   'time': { lean: 'center', credibility: 0.8, confidence: 0.7 },
+  'blasting-news-br': { lean: 'center', credibility: 0.6, confidence: 0.7 },
+  'sabq': { lean: 'center', credibility: 0.5, confidence: 0.6 },
+  
+  // Lean-right sources
+  'aftenposten': { lean: 'lean-right', credibility: 0.7, confidence: 0.8 },
+  'goteborgs-posten': { lean: 'lean-right', credibility: 0.6, confidence: 0.7 },
+  'the-jerusalem-post': { lean: 'lean-right', credibility: 0.7, confidence: 0.8 },
+  'svenska-dagbladet': { lean: 'lean-right', credibility: 0.7, confidence: 0.8 },
+  'news-com-au': { lean: 'lean-right', credibility: 0.6, confidence: 0.7 },
+  'rbc': { lean: 'lean-right', credibility: 0.6, confidence: 0.7 },
   
   'fox-news': { lean: 'right', credibility: 0.6, confidence: 0.9 },
   'the-wall-street-journal': { lean: 'right', credibility: 0.8, confidence: 0.8 },
   'new-york-post': { lean: 'right', credibility: 0.5, confidence: 0.8 },
   'breitbart-news': { lean: 'right', credibility: 0.4, confidence: 0.9 },
   'national-review': { lean: 'right', credibility: 0.7, confidence: 0.8 },
+  'globo': { lean: 'right', credibility: 0.6, confidence: 0.8 },
+  'la-gaceta': { lean: 'right', credibility: 0.5, confidence: 0.7 },
 };
 
 // Domain-based heuristics for unknown sources
@@ -162,7 +180,7 @@ function transformNewsAPISource(apiSource: NewsAPISourceData): NewsSource {
  * Classifies political lean for a source
  */
 function classifyPoliticalLean(apiSource: NewsAPISourceData): {
-  lean: 'left' | 'center' | 'right';
+  lean: 'left' | 'lean-left' | 'center' | 'lean-right' | 'right' | 'unknown';
   credibility: number;
 } {
   // Check explicit mapping first

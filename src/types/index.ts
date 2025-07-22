@@ -3,7 +3,7 @@ export interface NewsSource {
   name: string;
   rssUrl?: string; // Optional for dynamic sources
   newsApiId?: string;
-  politicalLean: 'left' | 'center' | 'right';
+  politicalLean: 'left' | 'lean-left' | 'center' | 'lean-right' | 'right' | 'unknown';
   credibility: number;
   website: string;
   // NewsAPI additional fields
@@ -21,7 +21,7 @@ export interface Article {
   link: string
   pubDate: string
   source: string
-  sourceLean: 'left' | 'center' | 'right'
+  sourceLean: 'left' | 'lean-left' | 'center' | 'lean-right' | 'right' | 'unknown'
   // Enhanced fields for NewsAPI
   imageUrl?: string
   author?: string
@@ -147,7 +147,7 @@ export interface DynamicSourceCache {
 // Political lean classification
 export interface PoliticalLeanMapping {
   [sourceId: string]: {
-    lean: 'left' | 'center' | 'right';
+    lean: 'left' | 'lean-left' | 'center' | 'lean-right' | 'right' | 'unknown';
     credibility: number;
     confidence: number; // 0-1, how confident we are in this classification
   };

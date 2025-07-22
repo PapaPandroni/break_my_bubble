@@ -14,25 +14,54 @@ interface ArticleCardProps {
 }
 
 function ArticleCard({ article }: ArticleCardProps) {
-  const getPoliticalLeanStyles = (lean: 'left' | 'center' | 'right') => {
+  const getPoliticalLeanStyles = (lean: 'left' | 'lean-left' | 'center' | 'lean-right' | 'right' | 'unknown') => {
     switch (lean) {
       case 'left':
-        return 'border-l-4 border-left-500 bg-left-50'
+        return 'border-l-4 border-blue-600 bg-blue-50'
+      case 'lean-left':
+        return 'border-l-4 border-blue-400 bg-blue-25'
       case 'center':
-        return 'border-l-4 border-center-500 bg-center-50'
+        return 'border-l-4 border-gray-500 bg-gray-50'
+      case 'lean-right':
+        return 'border-l-4 border-red-400 bg-red-25'
       case 'right':
-        return 'border-l-4 border-right-500 bg-right-50'
+        return 'border-l-4 border-red-600 bg-red-50'
+      case 'unknown':
+        return 'border-l-4 border-amber-500 bg-amber-25'
     }
   }
 
-  const getPoliticalLeanBadge = (lean: 'left' | 'center' | 'right') => {
+  const getPoliticalLeanBadge = (lean: 'left' | 'lean-left' | 'center' | 'lean-right' | 'right' | 'unknown') => {
     switch (lean) {
       case 'left':
-        return 'bg-left-100 text-left-700 border-left-300'
+        return 'bg-blue-200 text-blue-800 border-blue-400'
+      case 'lean-left':
+        return 'bg-blue-100 text-blue-700 border-blue-300'
       case 'center':
-        return 'bg-center-100 text-center-700 border-center-300'
+        return 'bg-gray-100 text-gray-700 border-gray-300'
+      case 'lean-right':
+        return 'bg-red-100 text-red-700 border-red-300'
       case 'right':
-        return 'bg-right-100 text-right-700 border-right-300'
+        return 'bg-red-200 text-red-800 border-red-400'
+      case 'unknown':
+        return 'bg-amber-100 text-amber-700 border-amber-300'
+    }
+  }
+
+  const getPoliticalLeanLabel = (lean: 'left' | 'lean-left' | 'center' | 'lean-right' | 'right' | 'unknown') => {
+    switch (lean) {
+      case 'left':
+        return 'Left'
+      case 'lean-left':
+        return 'Lean Left'
+      case 'center':
+        return 'Center'
+      case 'lean-right':
+        return 'Lean Right'
+      case 'right':
+        return 'Right'
+      case 'unknown':
+        return 'Unknown'
     }
   }
 
@@ -59,8 +88,8 @@ function ArticleCard({ article }: ArticleCardProps) {
             <span className={`px-2 py-1 text-xs font-medium rounded border ${getPoliticalLeanBadge(article.sourceLean)}`}>
               {article.source}
             </span>
-            <span className="text-xs text-gray-500 capitalize">
-              {article.sourceLean}
+            <span className="text-xs text-gray-500">
+              {getPoliticalLeanLabel(article.sourceLean)}
             </span>
           </div>
           <time className="text-xs text-gray-500" dateTime={article.pubDate}>
