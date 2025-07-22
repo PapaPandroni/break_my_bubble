@@ -20,16 +20,7 @@ let cachedNewsAPISources: Set<string> | null = null;
 let sourceCacheTimestamp = 0;
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
-// Create source mapping for quick lookups
-const sourceMapByName = new Map<string, NewsSource>();
-const sourceMapByApiId = new Map<string, NewsSource>();
-
-NEWS_SOURCES.forEach(source => {
-  sourceMapByName.set(source.name.toLowerCase(), source);
-  if (source.newsApiId) {
-    sourceMapByApiId.set(source.newsApiId, source);
-  }
-});
+// Remove static source maps - now using dynamic source data passed from unifiedSourceService
 
 // Fetch available NewsAPI sources
 export async function fetchAvailableNewsAPISources(): Promise<Set<string>> {
@@ -98,6 +89,7 @@ async function fetchArticlesByTopicWithoutSources(
   _topic: string,
   keywords: string[],
   timeframeDays: number,
+  availableSources: NewsSource[],
   languages?: NewsLanguage[],
   sortBy: NewsSortBy = 'relevancy',
   domains?: string[],
@@ -146,7 +138,7 @@ async function fetchArticlesByTopicWithoutSources(
     throw new NewsAPIError(data.message || 'Fallback NewsAPI request failed', data.code || 'fallbackApiError');
   }
   
-  const articles = data.articles.map(apiArticle => mapNewsAPIToArticle(apiArticle));
+  const articles = data.articles.map(apiArticle => mapNewsAPIToArticle(apiArticle, availableSources));
   const totalPages = Math.ceil(data.totalResults / pageSize);
   
   return {
@@ -164,6 +156,7 @@ export async function fetchArticlesByTopic(
   keywords: string[],
   sources: string[],
   timeframeDays: number,
+  availableSources: NewsSource[],
   languages?: NewsLanguage[],
   sortBy: NewsSortBy = 'relevancy',
   domains?: string[],
@@ -243,7 +236,7 @@ export async function fetchArticlesByTopic(
       if (errorData.message?.includes('source')) {
         console.warn('Source-related error, attempting fallback without specific sources');
         // Retry without sources parameter
-        return await fetchArticlesByTopicWithoutSources(topic, keywords, timeframeDays, languages, sortBy, domains, excludeDomains, page, pageSize);
+        return await fetchArticlesByTopicWithoutSources(topic, keywords, timeframeDays, availableSources, languages, sortBy, domains, excludeDomains, page, pageSize);
       }
       throw new NewsAPIError(errorData.message || 'Bad request to NewsAPI', 'badRequest', 400);
     }
@@ -258,7 +251,7 @@ export async function fetchArticlesByTopic(
     }
     
     // Convert to our Article format and return paginated results
-    const articles = data.articles.map(apiArticle => mapNewsAPIToArticle(apiArticle));
+    const articles = data.articles.map(apiArticle => mapNewsAPIToArticle(apiArticle, availableSources));
     const totalPages = Math.ceil(data.totalResults / pageSize);
     
     return {
@@ -274,17 +267,16 @@ export async function fetchArticlesByTopic(
   }
 }
 
-// Convert NewsAPI article to our Article interface
-function mapNewsAPIToArticle(apiArticle: NewsAPIArticle): Article {
-  // Find source info by name or API ID
-  let sourceInfo = sourceMapByName.get(apiArticle.source.name.toLowerCase());
+// Convert NewsAPI article to our Article interface using dynamic source data
+function mapNewsAPIToArticle(apiArticle: NewsAPIArticle, availableSources: NewsSource[]): Article {
+  // Find source info in dynamic source list by API ID or name
+  let sourceInfo = availableSources.find(source => 
+    source.newsApiId === apiArticle.source.id ||
+    source.name.toLowerCase() === apiArticle.source.name.toLowerCase()
+  );
   
-  if (!sourceInfo && apiArticle.source.id) {
-    sourceInfo = sourceMapByApiId.get(apiArticle.source.id);
-  }
-  
-  // Default to center if source not found
-  const politicalLean = sourceInfo?.politicalLean || 'center';
+  // Default to unknown if source not found (honest classification)
+  const politicalLean = sourceInfo?.politicalLean || 'unknown';
   
   return {
     title: apiArticle.title,
@@ -304,6 +296,7 @@ function mapNewsAPIToArticle(apiArticle: NewsAPIArticle): Article {
 export async function searchAllSources(
   keywords: string[],
   timeframeDays: number,
+  availableSources: NewsSource[],
   excludeSources?: string[],
   languages?: NewsLanguage[],
   sortBy: NewsSortBy = 'relevancy',
@@ -360,7 +353,7 @@ export async function searchAllSources(
       throw new NewsAPIError(data.message || 'NewsAPI request failed', data.code || 'apiError');
     }
     
-    let articles = data.articles.map(apiArticle => mapNewsAPIToArticle(apiArticle));
+    let articles = data.articles.map(apiArticle => mapNewsAPIToArticle(apiArticle, availableSources));
     
     // Filter out excluded sources if provided
     if (excludeSources && excludeSources.length > 0) {

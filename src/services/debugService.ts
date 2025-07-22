@@ -137,6 +137,9 @@ export const debugNewsAPI = async () => {
       const testSources = validation.valid.slice(0, 2); // Use first 2 valid sources
       console.log(`\n🧪 Testing with sources: ${testSources.join(', ')}`);
       
+      // For debug purposes, use static sources as availableSources
+      const staticSources = NEWS_SOURCES.map(source => ({ ...source, isDynamic: false }));
+      
       const articles = await fetchArticlesByTopic(
         'Climate Change',
         ['climate', 'global warming'],
@@ -145,7 +148,8 @@ export const debugNewsAPI = async () => {
           const source = NEWS_SOURCES.find(s => s.newsApiId === apiId);
           return source?.id || apiId;
         }),
-        7
+        7,
+        staticSources
       );
       console.log(`✅ Found ${articles.articles.length} articles`);
       if (articles.articles.length > 0) {

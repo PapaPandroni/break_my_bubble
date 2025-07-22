@@ -230,6 +230,7 @@ function App() {
             topicData.keywords,
             state.selectedSources,
             timeframeDays,
+            state.availableSources,
             state.selectedLanguages,
             state.selectedSort,
             undefined, // domains
@@ -242,6 +243,7 @@ function App() {
           const opposingResults = await searchAllSources(
             topicData.keywords,
             timeframeDays,
+            state.availableSources,
             state.selectedSources.map(id => {
               const source = state.availableSources.find(s => s.id === id);
               return source?.name || '';
