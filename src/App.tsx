@@ -13,12 +13,8 @@ import { unifiedSourceService } from './services/unifiedSourceService'
 // Components
 import Header from './components/Header'
 import SourceInput from './components/SourceInput'
-import LanguageSelector from './components/LanguageSelector'
-import CountrySelector from './components/CountrySelector'
-import SortSelector from './components/SortSelector'
 import TopicSelector from './components/TopicSelector'
-import TimeSlider from './components/TimeSlider'
-import DateRangePicker, { DateRange } from './components/DateRangePicker'
+import FilterPanel from './components/FilterPanel'
 import LoadingState, { ResultsLoadingSkeleton } from './components/LoadingState'
 import { NetworkErrorMessage } from './components/ErrorMessage'
 import ResultsDisplay from './components/ResultsDisplay'
@@ -379,7 +375,7 @@ function App() {
       
       <main className="max-w-6xl mx-auto px-4 py-8">
         {!state.results ? (
-          <div className="space-y-12">
+          <div className="space-y-8">
             {/* NewsAPI Configuration Warning */}
             {useNewsAPI && !hasNewsAPIKey && (
               <section>
@@ -405,83 +401,54 @@ function App() {
               </section>
             )}
 
-            {/* Step 1: Language Selection (NewsAPI only) */}
-            {useNewsAPI && (
+            {/* Main Interface - Progressive Disclosure */}
+            <div className="max-w-4xl mx-auto space-y-6">
+              {/* Primary Action: Source Selection */}
               <section>
-                <LanguageSelector
-                  selectedLanguages={state.selectedLanguages}
-                  onLanguagesChange={handleLanguagesChange}
-                  disabled={!useNewsAPI}
+                <SourceInput
+                  sources={state.availableSources}
+                  selectedSources={state.selectedSources}
+                  onSourcesChange={(sources) => 
+                    setState(prev => ({ ...prev, selectedSources: sources }))
+                  }
+                  isLoading={state.isLoadingSources}
+                  isDynamic={useNewsAPI}
+                  allSourcesLoaded={state.allSourcesLoaded}
                 />
               </section>
-            )}
 
-            {/* Step 1.5: Country Selection (NewsAPI only) */}
-            {useNewsAPI && (
+              {/* Secondary Action: Topic Selection */}
               <section>
-                <CountrySelector
+                <TopicSelector
+                  topics={TOPICS}
+                  selectedTopic={state.selectedTopic}
+                  onTopicChange={(topic) => 
+                    setState(prev => ({ ...prev, selectedTopic: topic }))
+                  }
+                />
+              </section>
+
+              {/* Advanced Options: Collapsible Filter Panel */}
+              <section>
+                <FilterPanel
+                  useNewsAPI={useNewsAPI}
+                  selectedLanguages={state.selectedLanguages}
+                  onLanguagesChange={handleLanguagesChange}
                   selectedCountries={state.selectedCountries}
                   onCountriesChange={handleCountriesChange}
                   availableCountries={state.availableCountries}
-                  disabled={!useNewsAPI}
-                />
-              </section>
-            )}
-
-            {/* Step 1.6: Sort Selection (NewsAPI only) */}
-            {useNewsAPI && (
-              <section>
-                <SortSelector
                   selectedSort={state.selectedSort}
                   onSortChange={handleSortChange}
-                  disabled={!useNewsAPI}
-                />
-              </section>
-            )}
-
-            {/* Step 2: Source Selection */}
-            <section>
-              <SourceInput
-                sources={state.availableSources}
-                selectedSources={state.selectedSources}
-                onSourcesChange={(sources) => 
-                  setState(prev => ({ ...prev, selectedSources: sources }))
-                }
-                isLoading={state.isLoadingSources}
-                isDynamic={useNewsAPI}
-                allSourcesLoaded={state.allSourcesLoaded}
-              />
-            </section>
-
-            {/* Step 3: Topic Selection */}
-            <section>
-              <TopicSelector
-                topics={TOPICS}
-                selectedTopic={state.selectedTopic}
-                onTopicChange={(topic) => 
-                  setState(prev => ({ ...prev, selectedTopic: topic }))
-                }
-              />
-            </section>
-
-            {/* Step 4: Time Range */}
-            <section>
-              {useNewsAPI ? (
-                <DateRangePicker
-                  timeOptions={TIME_OPTIONS}
-                  selectedRange={state.selectedDateRange}
-                  onRangeChange={handleDateRangeChange}
-                />
-              ) : (
-                <TimeSlider
-                  timeOptions={TIME_OPTIONS}
+                  selectedDateRange={state.selectedDateRange}
+                  onDateRangeChange={handleDateRangeChange}
                   selectedTimeframe={state.selectedTimeframe}
                   onTimeframeChange={(timeframe) => 
                     setState(prev => ({ ...prev, selectedTimeframe: timeframe }))
                   }
+                  timeOptions={TIME_OPTIONS}
                 />
-              )}
-            </section>
+              </section>
+            </div>
 
             {/* Analyze Button */}
             <section className="text-center space-y-4">
