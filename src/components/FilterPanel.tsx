@@ -5,11 +5,8 @@ import LanguageSelector from './LanguageSelector'
 import CountrySelector from './CountrySelector'
 import SortSelector from './SortSelector'
 import DateRangePicker from './DateRangePicker'
-import TimeSlider from './TimeSlider'
 
 interface FilterPanelProps {
-  // NewsAPI mode props
-  useNewsAPI: boolean
   selectedLanguages: NewsLanguage[]
   onLanguagesChange: (languages: NewsLanguage[]) => void
   selectedCountries: string[]
@@ -19,15 +16,10 @@ interface FilterPanelProps {
   onSortChange: (sort: NewsSortBy) => void
   selectedDateRange: DateRange
   onDateRangeChange: (dateRange: DateRange) => void
-  
-  // RSS mode props
-  selectedTimeframe: number
-  onTimeframeChange: (timeframe: number) => void
   timeOptions: { value: number; label: string; days: number }[]
 }
 
 export default function FilterPanel({
-  useNewsAPI,
   selectedLanguages,
   onLanguagesChange,
   selectedCountries,
@@ -37,8 +29,6 @@ export default function FilterPanel({
   onSortChange,
   selectedDateRange,
   onDateRangeChange,
-  selectedTimeframe,
-  onTimeframeChange,
   timeOptions
 }: FilterPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -46,14 +36,10 @@ export default function FilterPanel({
   const getActiveFiltersCount = () => {
     let count = 0
     
-    if (useNewsAPI) {
-      if (selectedLanguages.length > 0) count++ // Empty means all languages, so count when specific languages selected
-      if (selectedCountries.length > 0) count++
-      if (selectedSort !== 'relevancy') count++ // relevancy is default
-      if (selectedDateRange.type !== 'preset' || selectedDateRange.days !== 7) count++ // 1 week is default
-    } else {
-      if (selectedTimeframe !== 7) count++ // 1 week is default
-    }
+    if (selectedLanguages.length > 0) count++ // Empty means all languages, so count when specific languages selected
+    if (selectedCountries.length > 0) count++
+    if (selectedSort !== 'relevancy') count++ // relevancy is default
+    if (selectedDateRange.type !== 'preset' || selectedDateRange.days !== 7) count++ // 1 week is default
     
     return count
   }
@@ -90,55 +76,42 @@ export default function FilterPanel({
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {useNewsAPI ? (
-              <>
-                {/* Language Selection */}
-                <div className="space-y-4">
-                  <LanguageSelector
-                    selectedLanguages={selectedLanguages}
-                    onLanguagesChange={onLanguagesChange}
-                    disabled={false}
-                  />
-                </div>
+            {/* Language Selection */}
+            <div className="space-y-4">
+              <LanguageSelector
+                selectedLanguages={selectedLanguages}
+                onLanguagesChange={onLanguagesChange}
+                disabled={false}
+              />
+            </div>
 
-                {/* Country Selection */}
-                <div className="space-y-4">
-                  <CountrySelector
-                    selectedCountries={selectedCountries}
-                    onCountriesChange={onCountriesChange}
-                    availableCountries={availableCountries}
-                    disabled={false}
-                  />
-                </div>
+            {/* Country Selection */}
+            <div className="space-y-4">
+              <CountrySelector
+                selectedCountries={selectedCountries}
+                onCountriesChange={onCountriesChange}
+                availableCountries={availableCountries}
+                disabled={false}
+              />
+            </div>
 
-                {/* Sort Options */}
-                <div className="space-y-4">
-                  <SortSelector
-                    selectedSort={selectedSort}
-                    onSortChange={onSortChange}
-                    disabled={false}
-                  />
-                </div>
+            {/* Sort Options */}
+            <div className="space-y-4">
+              <SortSelector
+                selectedSort={selectedSort}
+                onSortChange={onSortChange}
+                disabled={false}
+              />
+            </div>
 
-                {/* Date Range */}
-                <div className="space-y-4">
-                  <DateRangePicker
-                    timeOptions={timeOptions}
-                    selectedRange={selectedDateRange}
-                    onRangeChange={onDateRangeChange}
-                  />
-                </div>
-              </>
-            ) : (
-              /* RSS Mode - Time Selection Only */
-              <div className="lg:col-span-2 space-y-4">
-                <TimeSlider
-                  timeOptions={timeOptions}
-                  selectedTimeframe={selectedTimeframe}
-                  onTimeframeChange={onTimeframeChange}
-                />
-              </div>
-            )}
+            {/* Date Range */}
+            <div className="space-y-4">
+              <DateRangePicker
+                timeOptions={timeOptions}
+                selectedRange={selectedDateRange}
+                onRangeChange={onDateRangeChange}
+              />
+            </div>
           </div>
 
           {/* Reset Filters Button */}
@@ -146,14 +119,10 @@ export default function FilterPanel({
             <div className="text-center pt-4 border-t border-gray-300">
               <button
                 onClick={() => {
-                  if (useNewsAPI) {
-                    onLanguagesChange(['en'])
-                    onCountriesChange([])
-                    onSortChange('relevancy')
-                    onDateRangeChange({ type: 'preset', days: 7, label: 'Last week' })
-                  } else {
-                    onTimeframeChange(7)
-                  }
+                  onLanguagesChange(['en'])
+                  onCountriesChange([])
+                  onSortChange('relevancy')
+                  onDateRangeChange({ type: 'preset', days: 7, label: 'Last week' })
                 }}
                 className="text-sm text-gray-600 hover:text-gray-800 underline focus:outline-none"
               >

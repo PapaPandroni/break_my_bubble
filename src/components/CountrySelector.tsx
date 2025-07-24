@@ -224,9 +224,7 @@ export default function CountrySelector({
           aria-haspopup="listbox"
         >
           <span className="text-gray-700">
-            {disabled 
-              ? 'Country selection not available in RSS mode'
-              : selectedCountries.length >= maxCountries 
+            {selectedCountries.length >= maxCountries 
               ? 'Maximum countries selected' 
               : availableCountries.length === 0
               ? 'No countries available'

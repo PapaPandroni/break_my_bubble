@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NewsLanguage } from '../types'
-import { AVAILABLE_LANGUAGES } from '../services/dynamicSourceService'
+import { AVAILABLE_LANGUAGES } from '../services/unifiedSourceService'
 
 interface LanguageSelectorProps {
   selectedLanguages: NewsLanguage[]
@@ -104,9 +104,7 @@ export default function LanguageSelector({
           aria-haspopup="listbox"
         >
           <span className="text-gray-700">
-            {disabled 
-              ? 'Language selection not available in RSS mode'
-              : selectedLanguages.length >= maxLanguages 
+            {selectedLanguages.length >= maxLanguages 
               ? 'Maximum languages selected' 
               : 'Click to select languages...'}
           </span>

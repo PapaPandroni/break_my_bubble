@@ -23,47 +23,41 @@ npm run test:newsapi
 
 ## Project Status
 
-**Version**: 2.2 - Multilanguage Search & Free Text Search ✅  
+**Version**: 2.3 - API-Only Architecture with Enhanced Caching ✅  
 **Last Updated**: July 2025  
 **Build Status**: ✅ Production Ready  
-**Features**: Comprehensive multilanguage search support (14 languages) + free text search functionality
+**Features**: NewsAPI-powered architecture with 12-24 hour smart caching, comprehensive multilanguage search (14 languages), and free text search functionality
 
 ## Architecture Overview
 
-BreakMyBubble is a React + TypeScript news analysis app that helps users discover opposing perspectives by comparing their preferred news sources against others. The app supports both RSS feeds and NewsAPI as data sources, with comprehensive multi-language and advanced filtering capabilities.
+BreakMyBubble is a React + TypeScript news analysis app that helps users discover opposing perspectives by comparing their preferred news sources against others. The app uses NewsAPI.org as its data source, providing comprehensive multi-language support and advanced filtering capabilities with intelligent caching for optimal performance.
 
 ### Core Components Structure
 
-- **App.tsx**: Main application with dual data source support and enhanced NewsAPI features
+- **App.tsx**: Main application with NewsAPI integration and enhanced caching features
 - **Components**: 15+ modular UI components including advanced selectors, filters, and CustomSearchInput
 - **Services**: Business logic layer with comprehensive NewsAPI integration and multilanguage filtering
 - **Data**: Static configuration for news sources, topics, and multilanguage keyword mappings
 
 ### Data Source Architecture
 
-The app supports two data fetching strategies controlled by the `VITE_USE_NEWS_API` environment variable:
+The app uses NewsAPI.org as its primary data source with comprehensive features:
 
-**RSS Mode (Basic)**: 
-- Fetches from RSS feeds via CORS proxy
-- Uses TimeSlider for date selection
-- Limited to English sources
-- Static source configuration
-
-**NewsAPI Mode (Advanced)**:
-- Uses NewsAPI.org with full feature set
-- Dynamic source fetching with 54 countries
-- 14 language support with native names
+**NewsAPI Integration**:
+- Dynamic source fetching with 54 countries supported
+- 14 language support with native names and flags
 - Advanced filtering (country, language, domain, sort options)
-- Custom date range picker
+- Custom date range selection with presets
 - Article images, author info, and content previews
-- Pagination support
+- Pagination support for large datasets
+- **Enhanced Caching**: 12-24 hour smart caching with automatic fallback during API outages
 
-### Enhanced Components (NewsAPI Mode)
+### Core Components
 
 - **LanguageSelector**: 14 languages with flags and native names, search functionality
 - **CountrySelector**: 54 countries with flags, multi-selection up to 3 countries  
 - **SortSelector**: Sort by relevancy, publishedAt, or popularity
-- **DateRangePicker**: Custom date ranges or preset options (replaces TimeSlider)
+- **DateRangePicker**: Custom date ranges or preset options
 - **Enhanced ResultsDisplay**: Article images, author info, content previews with 5-point political lean classification
 - **CustomSearchInput**: Free text search with multilanguage support, real-time parsing, and term management
 - **TopicSelector**: Enhanced with "Custom Search" option for user-defined search terms
@@ -71,10 +65,9 @@ The app supports two data fetching strategies controlled by the `VITE_USE_NEWS_A
 ### Key Services
 
 - **newsApiService.ts**: Complete NewsAPI integration with pagination, sorting, domain filtering
-- **dynamicSourceService.ts**: Dynamic source fetching with enhanced political lean classification (27+ international sources)
-- **rssService.ts**: RSS feed parsing with CORS proxy (fallback mode)
+- **unifiedSourceService.ts**: Unified source management with enhanced political lean classification (27+ international sources)
 - **filterService.ts**: Article filtering and opposing perspective logic with multilanguage keyword support
-- **cacheService.ts**: 30-minute local storage caching system
+- **cacheService.ts**: Enhanced 12-24 hour smart caching system with automatic fallback
 - **debugService.ts**: Development debugging utilities with NewsAPI testing
 
 ### Multilanguage Search & Free Text Search System ✨
@@ -101,12 +94,11 @@ The app supports two data fetching strategies controlled by the `VITE_USE_NEWS_A
 ### News Source Configuration
 
 **Static Sources** (`/src/data/newsSources.ts`):
-- RSS URL for RSS mode
-- NewsAPI ID for API mode  
+- NewsAPI source IDs and fallback configuration
 - 5-point political lean classification (left/lean-left/center/lean-right/right)
 - Credibility scoring (0.0-1.0)
 
-**Dynamic Sources** (NewsAPI Mode):
+**Dynamic Sources**:
 - Fetched from NewsAPI `/sources` endpoint
 - Enhanced political lean mapping with 27+ classified international sources
 - Filtered by language, country, category
@@ -155,7 +147,6 @@ Uses React hooks with enhanced AppState interface:
 ### Development Features
 
 When `import.meta.env.DEV` is true, debug buttons are available for:
-- RSS feed testing
 - Topic filtering validation  
 - NewsAPI integration testing
 - Source validation and API status
@@ -164,12 +155,11 @@ When `import.meta.env.DEV` is true, debug buttons are available for:
 
 ### Environment Variables
 
-**Required for NewsAPI Mode**:
-- `VITE_USE_NEWS_API=true`: Enables NewsAPI mode
-- `VITE_NEWS_API_KEY=your_key`: Your NewsAPI.org API key
+**Required**:
+- `VITE_NEWS_API_KEY=your_key`: Your NewsAPI.org API key (business users should provide this)
 
 **Optional**:
-- `VITE_USE_NEWS_API=false` or unset: Uses RSS mode (basic features)
+- `VITE_USE_NEWS_API=true`: Legacy environment variable (app now defaults to NewsAPI-only)
 
 ### Technology Stack
 
@@ -177,7 +167,7 @@ When `import.meta.env.DEV` is true, debug buttons are available for:
 - Vite build system with optimized production builds
 - Tailwind CSS for responsive styling with custom political lean color palette
 - Native Fetch API with comprehensive error handling
-- DOMParser for RSS parsing (fallback mode)
+- Enhanced caching with smart fallback strategies
 - Advanced date handling and internationalization
 
 ### Project Documentation Structure
@@ -193,31 +183,29 @@ Each directory contains comprehensive CLAUDE.md documentation:
 
 ### Setup Instructions
 
-**RSS Mode (Basic)**:
-1. `npm install`
-2. `npm run dev`
-3. No additional configuration needed
-
-**NewsAPI Mode (Full Features)**:
-1. Get free API key from [newsapi.org/register](https://newsapi.org/register)  
+**For Business/Production Use**:
+1. Get API key from [newsapi.org/register](https://newsapi.org/register) (business plan recommended)
 2. Create `.env` file:
    ```
-   VITE_USE_NEWS_API=true
    VITE_NEWS_API_KEY=your_api_key_here
    ```
 3. `npm install && npm run dev`
-4. Enjoy full multi-language, multi-country news analysis!
+4. Enjoy full multi-language, multi-country news analysis with 12-24 hour smart caching!
+
+**For Development/Testing**:
+1. `npm install`
+2. Contact project maintainer for development API key
+3. `npm run dev`
 
 ### Error Handling
 
 The app includes comprehensive error handling:
-- ✅ Graceful API key validation with user-friendly messages
-- ✅ Automatic fallback to RSS mode when NewsAPI fails  
-- ✅ Clear user guidance for configuration issues
+- ✅ Automatic fallback to cached data when NewsAPI is unavailable (up to 24 hours)
+- ✅ Smart caching with fresh/stale/expired tiers for optimal performance  
 - ✅ Network error recovery with exponential backoff retry
 - ✅ Loading states and user feedback throughout
 - ✅ Service-level error boundaries and recovery mechanisms
-- ✅ Cache fallback strategies for improved reliability
+- ✅ Background refresh for stale data without blocking user experience
 
 ### International Source Classifications (Latest Update)
 

@@ -118,13 +118,3 @@ export function NoResultsMessage({ topic }: { topic: string }) {
   )
 }
 
-export function CorsErrorMessage({ onRetry }: { onRetry?: () => void }) {
-  return (
-    <ErrorMessage
-      title="Feed Access Issue"
-      message="Some news sources are currently unavailable due to access restrictions. This is a common issue with RSS feeds in browsers."
-      onRetry={onRetry}
-      type="warning"
-    />
-  )
-}

@@ -4,10 +4,9 @@ import { DateRange } from './components/DateRangePicker'
 import { NEWS_SOURCES } from './data/newsSources'
 import { TOPICS, TIME_OPTIONS } from './data/topics'
 import { fetchArticlesByTopic, searchAllSources } from './services/newsApiService'
-import { fetchMultipleFeeds } from './services/rssService'
 import { filterAndProcessArticles, getOpposingPerspectives } from './services/filterService'
 import { feedCache } from './services/cacheService'
-import { debugFeedAccess, debugTopicFiltering, debugNewsAPI, debugSourceValidation, debugCacheStatus } from './services/debugService'
+import { debugTopicFiltering, debugNewsAPI, debugSourceValidation, debugCacheStatus } from './services/debugService'
 import { getMockArticlesForDemo } from './services/mockDataService'
 import { unifiedSourceService } from './services/unifiedSourceService'
 
@@ -19,6 +18,43 @@ import FilterPanel from './components/FilterPanel'
 import LoadingState, { ResultsLoadingSkeleton } from './components/LoadingState'
 import { NetworkErrorMessage } from './components/ErrorMessage'
 import ResultsDisplay from './components/ResultsDisplay'
+
+// Helper function to extract keywords from topic based on selected languages
+const extractKeywordsFromTopic = (topicData: any, selectedLanguages: NewsLanguage[]): string[] => {
+  // If no multilanguage keywords available, fall back to legacy keywords
+  if (!topicData.multiLanguageKeywords) {
+    return topicData.keywords || topicData.fallbackKeywords || [];
+  }
+
+  // Extract keywords for selected languages, with fallback strategy
+  const allKeywords: string[] = [];
+  
+  // If no languages selected, default to English
+  const languagesToUse = selectedLanguages.length > 0 ? selectedLanguages : ['en'];
+  
+  for (const lang of languagesToUse) {
+    const keywords = topicData.multiLanguageKeywords[lang];
+    if (keywords && keywords.length > 0) {
+      allKeywords.push(...keywords);
+    }
+  }
+  
+  // If no keywords found for selected languages, fallback to English
+  if (allKeywords.length === 0 && !languagesToUse.includes('en')) {
+    const englishKeywords = topicData.multiLanguageKeywords['en'];
+    if (englishKeywords) {
+      allKeywords.push(...englishKeywords);
+    }
+  }
+  
+  // Final fallback to legacy keywords or fallback keywords
+  if (allKeywords.length === 0) {
+    return topicData.keywords || topicData.fallbackKeywords || [];
+  }
+  
+  // Remove duplicates and return
+  return [...new Set(allKeywords)];
+};
 
 interface AppState {
   selectedSources: string[]
@@ -43,8 +79,6 @@ interface AppState {
 }
 
 function App() {
-  const useNewsAPI = import.meta.env.VITE_USE_NEWS_API === 'true';
-  const hasNewsAPIKey = Boolean(import.meta.env.VITE_NEWS_API_KEY);
   
   const [state, setState] = useState<AppState>({
     selectedSources: [],
@@ -62,7 +96,7 @@ function App() {
     availableSources: NEWS_SOURCES.map(source => ({ ...source, isDynamic: false })), // Start with static sources immediately
     allSources: NEWS_SOURCES.map(source => ({ ...source, isDynamic: false })), // Store all sources for filtering
     availableCountries: ['us'], // Start with US as most static sources are US-based
-    allSourcesLoaded: !useNewsAPI, // If not using NewsAPI, we already have all sources
+    allSourcesLoaded: false, // Will be set to true once dynamic sources are loaded
   })
 
   const canAnalyze = state.selectedSources.length >= 1 && (
@@ -72,13 +106,8 @@ function App() {
 
   // Initialize sources with optimistic loading
   useEffect(() => {
-    if (useNewsAPI && hasNewsAPIKey) {
-      initializeSourcesOptimistically()
-    } else {
-      // Start background preload for better user experience even in RSS mode
-      unifiedSourceService.preloadSources()
-    }
-  }, [useNewsAPI, hasNewsAPIKey])
+    initializeSourcesOptimistically()
+  }, [])
 
   const initializeSourcesOptimistically = async () => {
     try {
@@ -211,9 +240,7 @@ function App() {
       results: null,
     }))
 
-    if (useNewsAPI) {
-      // Use NewsAPI implementation
-      try {
+    try {
         // Get selected topic data (handle Custom Search case)
         let topicData = TOPICS.find(t => t.topic === state.selectedTopic)
         if (!topicData && state.selectedTopic === 'Custom Search') {
@@ -228,70 +255,133 @@ function App() {
           throw new Error('Selected topic not found')
         }
 
-        // Check cache first
+        // Enhanced caching with smart fallback strategy
         const timeframeDays = state.selectedDateRange.days
         const customSearchKey = state.customSearchTerms.length > 0 ? state.customSearchTerms.join(',') : ''
         const cacheKey = `newsapi-${state.selectedTopic}-${state.selectedSources.join(',')}-${timeframeDays}-${state.selectedLanguages.join(',')}-${state.selectedCountries.join(',')}-${state.selectedSort}-${customSearchKey}`;
-        const cached = feedCache.getCachedFeed(cacheKey);
+        const cacheResult = feedCache.getCachedFeedWithStatus(cacheKey);
         
         let allArticles: Article[] = [];
+        let shouldFetchFresh = false;
+        let backgroundRefresh = false;
         
-        if (cached) {
-          allArticles = cached;
+        if (cacheResult.status === 'fresh') {
+          // Cache is fresh (< 2 hours) - use immediately
+          allArticles = cacheResult.data!;
+          console.log(`📋 Using fresh cache (${feedCache.getCacheAge(cacheKey) ? Math.floor(feedCache.getCacheAge(cacheKey)! / 60000) : 0} minutes old)`);
+        } else if (cacheResult.status === 'stale') {
+          // Cache is stale (2-12 hours) - use immediately but refresh in background
+          allArticles = cacheResult.data!;
+          backgroundRefresh = true;
+          console.log(`📋 Using stale cache (${feedCache.getCacheAge(cacheKey) ? Math.floor(feedCache.getCacheAge(cacheKey)! / (60 * 60 * 1000)) : 0} hours old), refreshing in background`);
         } else {
-          // Determine keywords to use (custom search terms or topic keywords)
-          const keywordsToUse = state.customSearchTerms.length > 0 
-            ? state.customSearchTerms 
-            : topicData.keywords;
+          // Cache is expired or missing - fetch fresh data
+          shouldFetchFresh = true;
+        }
+        
+        if (shouldFetchFresh || backgroundRefresh) {
+          try {
+            // Determine keywords to use (custom search terms or topic keywords)
+            const keywordsToUse = state.customSearchTerms.length > 0 
+              ? state.customSearchTerms 
+              : extractKeywordsFromTopic(topicData, state.selectedLanguages);
+            
+            console.log(`🔍 Search Debug:`, {
+              topic: state.selectedTopic,
+              selectedSources: state.selectedSources,
+              keywordsCount: keywordsToUse.length,
+              keywords: keywordsToUse.slice(0, 5), // Show first 5 keywords
+              selectedLanguages: state.selectedLanguages
+            });
 
-          // Fetch articles from user's selected sources (using pagination)
-          const userResults = await fetchArticlesByTopic(
-            state.selectedTopic,
-            keywordsToUse,
-            state.selectedSources,
-            timeframeDays,
-            state.availableSources,
-            state.selectedLanguages,
-            state.selectedSort,
-            undefined, // domains
-            undefined, // excludeDomains
-            1, // page
-            50 // smaller pageSize for initial load
-          );
-          
-          // Fetch articles from all other sources for comparison
-          const opposingResults = await searchAllSources(
-            keywordsToUse,
-            timeframeDays,
-            state.availableSources,
-            state.selectedSources.map(id => {
-              const source = state.availableSources.find(s => s.id === id);
-              return source?.name || '';
-            }),
-            state.selectedLanguages,
-            state.selectedSort,
-            undefined, // domains
-            undefined, // excludeDomains
-            1, // page
-            50 // smaller pageSize for initial load
-          );
-          
-          allArticles = [...userResults.articles, ...opposingResults.articles];
-          
-          // Cache the results
-          feedCache.setCachedFeed(cacheKey, allArticles);
+            // Fetch articles from user's selected sources (using pagination)
+            const userResults = await fetchArticlesByTopic(
+              state.selectedTopic,
+              keywordsToUse,
+              state.selectedSources,
+              timeframeDays,
+              state.availableSources,
+              state.selectedLanguages,
+              state.selectedSort,
+              undefined, // domains
+              undefined, // excludeDomains
+              1, // page
+              50 // smaller pageSize for initial load
+            );
+            
+            // Fetch articles from all other sources for comparison
+            const opposingResults = await searchAllSources(
+              keywordsToUse,
+              timeframeDays,
+              state.availableSources,
+              state.selectedSources.map(id => {
+                const source = state.availableSources.find(s => s.id === id);
+                return source?.name || '';
+              }),
+              state.selectedLanguages,
+              state.selectedSort,
+              undefined, // domains
+              undefined, // excludeDomains
+              1, // page
+              50 // smaller pageSize for initial load
+            );
+            
+            const freshArticles = [...userResults.articles, ...opposingResults.articles];
+            
+            console.log(`📊 API Results:`, {
+              userArticles: userResults.articles.length,
+              userTotalResults: userResults.totalResults,
+              opposingArticles: opposingResults.articles.length,
+              opposingTotalResults: opposingResults.totalResults,
+              combinedArticles: freshArticles.length
+            });
+            
+            // Cache the fresh results
+            feedCache.setCachedFeed(cacheKey, freshArticles);
+            
+            if (shouldFetchFresh) {
+              // For fresh fetch, use the new data
+              allArticles = freshArticles;
+              console.log(`✅ Fetched fresh data (${freshArticles.length} articles)`);
+            } else {
+              // For background refresh, keep using stale data but log success
+              console.log(`🔄 Background refresh successful (${freshArticles.length} articles cached)`);
+            }
+          } catch (error) {
+            console.error('Failed to fetch fresh articles:', error);
+            
+            if (shouldFetchFresh) {
+              // If fresh fetch failed, try to use expired cache as fallback
+              if (cacheResult.status === 'expired' && cacheResult.data) {
+                allArticles = cacheResult.data;
+                console.log(`🚨 API failed, using expired cache fallback (${Math.floor(cacheResult.age! / (60 * 60 * 1000))} hours old)`);
+              } else {
+                // No fallback available, re-throw error
+                throw error;
+              }
+            }
+            // For background refresh failure, silently continue with stale data
+          }
         }
 
         // Filter and process articles (remove duplicates, respect user's sort preference)
+        // Skip topic filtering since NewsAPI already did keyword matching
         const filteredArticles = filterAndProcessArticles(
           allArticles,
           topicData,
-          state.selectedTimeframe,
+          timeframeDays, // Use the correct timeframe from selectedDateRange
           state.selectedSort,
           20,
           state.selectedLanguages,
-          state.customSearchTerms.length > 0 ? state.customSearchTerms : undefined
+          state.customSearchTerms.length > 0 ? state.customSearchTerms : undefined,
+          true // skipTopicFiltering - NewsAPI already did keyword matching
         );
+
+        console.log(`🔄 After Filtering:`, {
+          beforeFiltering: allArticles.length,
+          afterFiltering: filteredArticles.length,
+          maxArticles: 20
+        });
 
         // Separate user articles from opposing perspectives
         const { userArticles, opposingArticles } = getOpposingPerspectives(
@@ -307,105 +397,13 @@ function App() {
           isLoading: false,
           results: { userArticles, opposingArticles },
         }))
-      } catch (error) {
-        console.error('Analysis failed:', error)
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: error instanceof Error ? error.message : 'Analysis failed',
-        }))
-      }
-    } else {
-      // Use RSS implementation
-      try {
-        // Get all relevant news sources (user selected + others for comparison)
-        // const userSourcesData = NEWS_SOURCES.filter(source => 
-        //   state.selectedSources.includes(source.id)
-        // )
-        
-        // Get all sources for comprehensive analysis
-        const allSourcesData = NEWS_SOURCES
-
-        // Check cache first
-        const cachedArticles: Article[] = []
-        const sourcesToFetch: NewsSource[] = []
-
-        for (const source of allSourcesData) {
-          const cached = feedCache.getCachedFeed(source.id)
-          if (cached) {
-            cachedArticles.push(...cached)
-          } else {
-            sourcesToFetch.push(source)
-          }
-        }
-
-        // Fetch missing feeds
-        let fetchedArticles: Article[] = []
-        if (sourcesToFetch.length > 0) {
-          const feedResults = await fetchMultipleFeeds(sourcesToFetch)
-          
-          // Process results and update cache
-          for (const result of feedResults) {
-            if (result.articles.length > 0 && !result.error) {
-              const source = sourcesToFetch.find(s => s.name === result.source)
-              if (source) {
-                feedCache.setCachedFeed(source.id, result.articles)
-                fetchedArticles.push(...result.articles)
-              }
-            }
-          }
-        }
-
-        // Combine cached and fetched articles
-        const allArticles = [...cachedArticles, ...fetchedArticles]
-
-        // Get selected topic data (handle Custom Search case)
-        let topicData = TOPICS.find(t => t.topic === state.selectedTopic)
-        if (!topicData && state.selectedTopic === 'Custom Search') {
-          // Create synthetic topic data for custom search
-          topicData = {
-            topic: 'Custom Search',
-            keywords: [], // Legacy - not used for custom search
-            customSearch: true
-          }
-        }
-        if (!topicData) {
-          throw new Error('Selected topic not found')
-        }
-
-        // Filter and process articles
-        const filteredArticles = filterAndProcessArticles(
-          allArticles,
-          topicData,
-          state.selectedTimeframe,
-          'publishedAt', // RSS mode always sorts by date
-          20, // Max 20 articles per source
-          state.selectedLanguages,
-          state.customSearchTerms.length > 0 ? state.customSearchTerms : undefined
-        )
-
-        // Separate user articles from opposing perspectives
-        const { userArticles, opposingArticles } = getOpposingPerspectives(
-          state.selectedSources.map(id => {
-            return state.availableSources.find(s => s.id === id);
-          }).filter(Boolean) as NewsSource[],
-          filteredArticles,
-          'publishedAt'
-        )
-
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          results: { userArticles, opposingArticles },
-        }))
-      } catch (error) {
-        console.error('Analysis failed:', error)
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: error instanceof Error ? error.message : 'Analysis failed',
-        }))
-      }
+    } catch (error) {
+      console.error('Analysis failed:', error)
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Analysis failed',
+      }))
     }
   }
 
@@ -416,30 +414,6 @@ function App() {
       <main className="max-w-6xl mx-auto px-4 py-8">
         {!state.results ? (
           <div className="space-y-8">
-            {/* NewsAPI Configuration Warning */}
-            {useNewsAPI && !hasNewsAPIKey && (
-              <section>
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <div className="flex items-start">
-                    <span className="text-amber-600 mr-2">⚠️</span>
-                    <div>
-                      <div className="font-medium text-amber-800">NewsAPI Configuration Required</div>
-                      <div className="text-sm text-amber-700 mt-1">
-                        NewsAPI mode is enabled but no API key is configured. Please add your NewsAPI key to the 
-                        <code className="mx-1 px-1 bg-amber-100 rounded">VITE_NEWS_API_KEY</code> 
-                        environment variable, or switch to RSS mode by removing 
-                        <code className="mx-1 px-1 bg-amber-100 rounded">VITE_USE_NEWS_API</code>.
-                        <br />
-                        <a href="https://newsapi.org/register" target="_blank" rel="noopener noreferrer" 
-                           className="text-amber-600 underline hover:text-amber-800 mt-1 inline-block">
-                          Get a free NewsAPI key here →
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-            )}
 
             {/* Main Interface - Progressive Disclosure */}
             <div className="max-w-4xl mx-auto space-y-6">
@@ -452,7 +426,7 @@ function App() {
                     setState(prev => ({ ...prev, selectedSources: sources }))
                   }
                   isLoading={state.isLoadingSources}
-                  isDynamic={useNewsAPI}
+                  isDynamic={true}
                   allSourcesLoaded={state.allSourcesLoaded}
                 />
               </section>
@@ -475,7 +449,6 @@ function App() {
               {/* Advanced Options: Collapsible Filter Panel */}
               <section>
                 <FilterPanel
-                  useNewsAPI={useNewsAPI}
                   selectedLanguages={state.selectedLanguages}
                   onLanguagesChange={handleLanguagesChange}
                   selectedCountries={state.selectedCountries}
@@ -485,10 +458,6 @@ function App() {
                   onSortChange={handleSortChange}
                   selectedDateRange={state.selectedDateRange}
                   onDateRangeChange={handleDateRangeChange}
-                  selectedTimeframe={state.selectedTimeframe}
-                  onTimeframeChange={(timeframe) => 
-                    setState(prev => ({ ...prev, selectedTimeframe: timeframe }))
-                  }
                   timeOptions={TIME_OPTIONS}
                 />
               </section>
@@ -521,15 +490,6 @@ function App() {
                 <div className="pt-4 border-t border-gray-200">
                   <p className="text-xs text-gray-500 mb-2">Development Tools</p>
                   <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => {
-                        console.log('🔧 Running feed debug...')
-                        debugFeedAccess()
-                      }}
-                      className="px-3 py-2 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600"
-                    >
-                      Test RSS Feeds
-                    </button>
                     <button
                       onClick={() => {
                         console.log('🔧 Running topic filter debug...')

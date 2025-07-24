@@ -4,10 +4,10 @@ import {
   NewsAPISourceData, 
   NewsLanguage, 
   NewsCategory,
-  SourceFilters
+  SourceFilters,
+  LanguageOption
 } from '../types';
 import { NEWS_SOURCES } from '../data/newsSources';
-import { AVAILABLE_LANGUAGES } from './dynamicSourceService';
 
 const API_KEY = import.meta.env.VITE_NEWS_API_KEY;
 const BASE_URL = 'https://newsapi.org/v2';
@@ -16,6 +16,24 @@ const BASE_URL = 'https://newsapi.org/v2';
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 const CACHE_KEY_ALL_SOURCES = 'unified_all_sources';
 const CACHE_KEY_STATIC_FALLBACK = 'static_sources_fallback';
+
+// Available languages with display names and flags
+export const AVAILABLE_LANGUAGES: LanguageOption[] = [
+  { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
+  { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
+  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪' },
+  { code: 'it', name: 'Italian', nativeName: 'Italiano', flag: '🇮🇹' },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇵🇹' },
+  { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇷🇺' },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦' },
+  { code: 'he', name: 'Hebrew', nativeName: 'עברית', flag: '🇮🇱' },
+  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', flag: '🇳🇱' },
+  { code: 'no', name: 'Norwegian', nativeName: 'Norsk', flag: '🇳🇴' },
+  { code: 'sv', name: 'Swedish', nativeName: 'Svenska', flag: '🇸🇪' },
+  { code: 'zh', name: 'Chinese', nativeName: '中文', flag: '🇨🇳' },
+  { code: 'ud', name: 'Urdu', nativeName: 'اردو', flag: '🇵🇰' },
+];
 
 // Political lean classification mapping based on AllSides Media Bias Chart
 // Updated mapping for real NewsAPI source IDs (January 2025)
@@ -314,8 +332,7 @@ class UnifiedSourceService {
   private async fetchFromAPI(): Promise<NewsSource[]> {
     try {
       if (!API_KEY) {
-        console.warn('NewsAPI key not configured, using static sources');
-        return this.getStaticSourcesWithCache();
+        throw new Error('NewsAPI key is required but not configured in environment variables');
       }
 
       const response = await fetch(`${BASE_URL}/top-headlines/sources?apiKey=${API_KEY}`);
@@ -586,5 +603,19 @@ class UnifiedSourceService {
 // Export singleton instance
 export const unifiedSourceService = new UnifiedSourceService();
 
-// Export available languages for convenience
-export { AVAILABLE_LANGUAGES };
+// Export standalone functions for backward compatibility
+export function filterSources(sources: NewsSource[], filters: SourceFilters): NewsSource[] {
+  return unifiedSourceService.filterSources(sources, filters);
+}
+
+export function getAvailableCountries(sources: NewsSource[]): string[] {
+  return unifiedSourceService.getAvailableCountries(sources);
+}
+
+export function getAvailableCategories(sources: NewsSource[]): NewsCategory[] {
+  return unifiedSourceService.getAvailableCategories(sources);
+}
+
+export function clearDynamicSourceCache(): void {
+  unifiedSourceService.clearCache();
+}

@@ -180,10 +180,16 @@ export const filterAndProcessArticles = (
   sortBy: NewsSortBy,
   maxArticlesPerSource = 20,
   selectedLanguages?: NewsLanguage[],
-  customSearchTerms?: string[]
+  customSearchTerms?: string[],
+  skipTopicFiltering = false
 ): Article[] => {
-  // Filter by topic using language-aware filtering
-  let filtered = filterArticlesByTopic(articles, topicKeywords, selectedLanguages, customSearchTerms)
+  let filtered = articles;
+  
+  // Only filter by topic if not already done by NewsAPI
+  if (!skipTopicFiltering) {
+    // Filter by topic using language-aware filtering
+    filtered = filterArticlesByTopic(filtered, topicKeywords, selectedLanguages, customSearchTerms);
+  }
 
   // Filter by timeframe
   filtered = filterArticlesByTimeframe(filtered, timeframeDays)
@@ -236,6 +242,45 @@ export const groupArticlesByPoliticalLean = (articles: Article[]) => {
   return grouped
 }
 
+// High-credibility news sources for quality ranking
+const HIGH_CREDIBILITY_SOURCES = new Map<string, number>([
+  // Tier 1: Premium credibility (0.9-1.0)
+  ['reuters', 0.95], ['associated press', 0.95], ['ap news', 0.95],
+  ['bbc news', 0.9], ['npr', 0.9], ['pbs newshour', 0.9],
+  
+  // Tier 2: High credibility (0.8-0.89)
+  ['the wall street journal', 0.85], ['the new york times', 0.85], 
+  ['the washington post', 0.85], ['the guardian', 0.8], ['the economist', 0.8],
+  ['bloomberg', 0.8], ['financial times', 0.8],
+  
+  // Tier 3: Good credibility (0.7-0.79)
+  ['cnn', 0.75], ['fox news', 0.75], ['abc news', 0.75], ['cbs news', 0.75],
+  ['nbc news', 0.75], ['usa today', 0.7], ['los angeles times', 0.7],
+  ['chicago tribune', 0.7], ['politico', 0.7], ['the hill', 0.7],
+  
+  // Tier 4: Moderate credibility (0.6-0.69)
+  ['time', 0.65], ['newsweek', 0.65], ['new york post', 0.6], ['axios', 0.65]
+]);
+
+const getSourceCredibility = (sourceName: string): number => {
+  const normalizedName = sourceName.toLowerCase();
+  
+  // Check exact matches first
+  if (HIGH_CREDIBILITY_SOURCES.has(normalizedName)) {
+    return HIGH_CREDIBILITY_SOURCES.get(normalizedName)!;
+  }
+  
+  // Check partial matches
+  for (const [source, credibility] of HIGH_CREDIBILITY_SOURCES.entries()) {
+    if (normalizedName.includes(source) || source.includes(normalizedName)) {
+      return credibility;
+    }
+  }
+  
+  // Default credibility for unknown sources
+  return 0.5;
+};
+
 export const getOpposingPerspectives = (
   userSources: NewsSource[],
   allArticles: Article[],
@@ -252,31 +297,37 @@ export const getOpposingPerspectives = (
     !userSourceNames.includes(article.source.toLowerCase())
   );
 
-  // Apply intelligent opposition ranking
+  // Apply intelligent opposition ranking with credibility prioritization
   if (opposingArticles.length > 0 && userSources.length > 0) {
     const { primaryLean } = detectUserPoliticalLean(userSources);
     
-    // Create a map of source credibility for quick lookup
-    const sourceCredibilityMap = new Map<string, number>();
-    // For opposing articles, we need to find their source credibility
-    // Since we don't have the full source objects here, use default credibility
-    
-    // Sort opposing articles by opposition score
+    // Sort opposing articles by combined score: credibility + opposition
     opposingArticles.sort((a, b) => {
-      const credibilityA = sourceCredibilityMap.get(a.source.toLowerCase()) || 0.6; // Default credibility
-      const credibilityB = sourceCredibilityMap.get(b.source.toLowerCase()) || 0.6;
+      const credibilityA = getSourceCredibility(a.source);
+      const credibilityB = getSourceCredibility(b.source);
       
-      const scoreA = calculateOppositionScore(primaryLean, a.sourceLean, credibilityA);
-      const scoreB = calculateOppositionScore(primaryLean, b.sourceLean, credibilityB);
+      // Calculate opposition scores
+      const oppositionScoreA = calculateOppositionScore(primaryLean, a.sourceLean, credibilityA);
+      const oppositionScoreB = calculateOppositionScore(primaryLean, b.sourceLean, credibilityB);
       
-      // Higher opposition scores first
-      if (scoreA !== scoreB) {
-        return scoreB - scoreA;
+      // Boost high-credibility sources significantly
+      const credibilityBoostA = credibilityA >= 0.7 ? 20 : 0;
+      const credibilityBoostB = credibilityB >= 0.7 ? 20 : 0;
+      
+      const totalScoreA = oppositionScoreA + credibilityBoostA;
+      const totalScoreB = oppositionScoreB + credibilityBoostB;
+      
+      // Higher total scores first (opposition + credibility boost)
+      if (Math.abs(totalScoreA - totalScoreB) > 1) {
+        return totalScoreB - totalScoreA;
+      }
+      
+      // For close scores, prioritize by pure credibility
+      if (Math.abs(credibilityA - credibilityB) > 0.1) {
+        return credibilityB - credibilityA;
       }
       
       // For ties, maintain original NewsAPI sorting
-      // If sortBy is publishedAt, articles are already sorted by date in filterAndProcessArticles
-      // For relevancy/popularity, preserve the original order by doing nothing
       return 0;
     });
   }

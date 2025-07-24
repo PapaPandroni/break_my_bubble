@@ -1,35 +1,6 @@
-import { fetchWithCorsProxy } from './corsProxy'
 import { fetchAvailableNewsAPISources, validateNewsAPISources, checkAPIStatus, fetchArticlesByTopic } from './newsApiService'
 import { NEWS_SOURCES } from '../data/newsSources'
 
-export const debugFeedAccess = async () => {
-  const testFeeds = [
-    'https://feeds.reuters.com/reuters/topNews',
-    'http://rss.cnn.com/rss/edition.rss',
-    'http://feeds.bbci.co.uk/news/rss.xml',
-    'https://feeds.npr.org/1001/rss.xml'
-  ]
-
-  console.log('🔍 Starting RSS feed debugging...')
-  
-  for (const feed of testFeeds) {
-    try {
-      console.log(`\n📡 Testing feed: ${feed}`)
-      const data = await fetchWithCorsProxy(feed)
-      console.log(`✅ Success! Got ${data.length} characters`)
-      console.log(`📄 First 200 chars: ${data.substring(0, 200)}...`)
-      
-      // Check if it looks like XML
-      if (data.includes('<?xml') || data.includes('<rss') || data.includes('<feed')) {
-        console.log('✅ Looks like valid XML/RSS')
-      } else {
-        console.log('⚠️ Does not look like XML/RSS')
-      }
-    } catch (error) {
-      console.error(`❌ Failed: ${error}`)
-    }
-  }
-}
 
 export const debugTopicFiltering = () => {
   const testArticles = [

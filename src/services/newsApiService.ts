@@ -26,8 +26,7 @@ const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 export async function fetchAvailableNewsAPISources(): Promise<Set<string>> {
   try {
     if (!API_KEY) {
-      console.warn('NewsAPI key not configured');
-      return new Set<string>();
+      throw new Error('NewsAPI key is required but not configured in environment variables');
     }
 
     const response = await fetch(`${BASE_URL}/top-headlines/sources?apiKey=${API_KEY}`);
@@ -292,6 +291,16 @@ function mapNewsAPIToArticle(apiArticle: NewsAPIArticle, availableSources: NewsS
   };
 }
 
+// High-quality news domains for opposition search
+const HIGH_QUALITY_DOMAINS = [
+  'bbc.com', 'reuters.com', 'apnews.com', 'cnn.com', 'foxnews.com',
+  'washingtonpost.com', 'nytimes.com', 'wsj.com', 'theguardian.com',
+  'npr.org', 'abcnews.go.com', 'cbsnews.com', 'nbcnews.com',
+  'usatoday.com', 'latimes.com', 'chicagotribune.com', 'nypost.com',
+  'politico.com', 'thehill.com', 'bloomberg.com', 'cnbc.com',
+  'economist.com', 'time.com', 'newsweek.com', 'axios.com'
+];
+
 // Fetch articles without source filtering (for opposing perspectives)
 export async function searchAllSources(
   keywords: string[],
@@ -327,10 +336,15 @@ export async function searchAllSources(
       params.append('language', languages.join(','));
     }
 
-    // Add domain parameters if provided
-    if (domains && domains.length > 0) {
+    // Prioritize high-quality domains for opposing perspectives
+    // If no specific domains provided, use high-quality domains
+    if (!domains || domains.length === 0) {
+      params.append('domains', HIGH_QUALITY_DOMAINS.join(','));
+    } else {
+      // Use provided domains
       params.append('domains', domains.join(','));
     }
+    
     if (excludeDomains && excludeDomains.length > 0) {
       params.append('excludeDomains', excludeDomains.join(','));
     }

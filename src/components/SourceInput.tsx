@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { NewsSource, NewsCategory, SourceFilters } from '../types'
-import { filterSources } from '../services/dynamicSourceService'
+import { filterSources } from '../services/unifiedSourceService'
 
 interface SourceInputProps {
   sources: NewsSource[]
@@ -349,7 +349,7 @@ export default function SourceInput({
       
       {isDynamic && sources.length === 0 && !isLoading && (
         <p className="text-sm text-red-600">
-          No sources available. Please check your internet connection or try switching to RSS mode.
+          No sources available. Please check your internet connection.
         </p>
       )}
     </div>
