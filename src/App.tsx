@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Article, NewsSource, NewsLanguage, NewsSortBy } from './types'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { Article, NewsSource, NewsLanguage, NewsSortBy, AppStep, TopicKeywords } from './types'
 import { DateRange } from './components/DateRangePicker'
 import { NEWS_SOURCES } from './data/newsSources'
 import { TOPICS, TIME_OPTIONS } from './data/topics'
@@ -12,15 +12,17 @@ import { unifiedSourceService } from './services/unifiedSourceService'
 
 // Components
 import Header from './components/Header'
-import SourceInput from './components/SourceInput'
-import TopicSelector from './components/TopicSelector'
-import FilterPanel from './components/FilterPanel'
+import LandingPage from './components/LandingPage'
+import TopicSelectionModal from './components/TopicSelectionModal'
 import LoadingState, { ResultsLoadingSkeleton } from './components/LoadingState'
 import { NetworkErrorMessage } from './components/ErrorMessage'
 import ResultsDisplay from './components/ResultsDisplay'
+import ErrorBoundary from './components/ErrorBoundary'
+import ModalErrorBoundary from './components/ModalErrorBoundary'
+import ResultsErrorBoundary from './components/ResultsErrorBoundary'
 
 // Helper function to extract keywords from topic based on selected languages
-const extractKeywordsFromTopic = (topicData: any, selectedLanguages: NewsLanguage[]): string[] => {
+const extractKeywordsFromTopic = (topicData: TopicKeywords, selectedLanguages: NewsLanguage[]): string[] => {
   // If no multilanguage keywords available, fall back to legacy keywords
   if (!topicData.multiLanguageKeywords) {
     return topicData.keywords || topicData.fallbackKeywords || [];
@@ -33,7 +35,7 @@ const extractKeywordsFromTopic = (topicData: any, selectedLanguages: NewsLanguag
   const languagesToUse = selectedLanguages.length > 0 ? selectedLanguages : ['en'];
   
   for (const lang of languagesToUse) {
-    const keywords = topicData.multiLanguageKeywords[lang];
+    const keywords = topicData.multiLanguageKeywords?.[lang as NewsLanguage];
     if (keywords && keywords.length > 0) {
       allKeywords.push(...keywords);
     }
@@ -41,7 +43,7 @@ const extractKeywordsFromTopic = (topicData: any, selectedLanguages: NewsLanguag
   
   // If no keywords found for selected languages, fallback to English
   if (allKeywords.length === 0 && !languagesToUse.includes('en')) {
-    const englishKeywords = topicData.multiLanguageKeywords['en'];
+    const englishKeywords = topicData.multiLanguageKeywords?.['en'];
     if (englishKeywords) {
       allKeywords.push(...englishKeywords);
     }
@@ -57,6 +59,7 @@ const extractKeywordsFromTopic = (topicData: any, selectedLanguages: NewsLanguag
 };
 
 interface AppState {
+  currentStep: AppStep
   selectedSources: string[]
   selectedTopic: string
   customSearchTerms: string[]
@@ -81,6 +84,7 @@ interface AppState {
 function App() {
   
   const [state, setState] = useState<AppState>({
+    currentStep: 'landing',
     selectedSources: [],
     selectedTopic: '',
     customSearchTerms: [], // Start with no custom search terms
@@ -99,10 +103,28 @@ function App() {
     allSourcesLoaded: false, // Will be set to true once dynamic sources are loaded
   })
 
-  const canAnalyze = state.selectedSources.length >= 1 && (
-    (state.selectedTopic && state.selectedTopic !== 'Custom Search') ||
-    (state.selectedTopic === 'Custom Search' && state.customSearchTerms.length > 0)
-  )
+  // Memoize expensive calculations
+  const canAnalyze = useMemo(() => {
+    return state.selectedSources.length >= 1 && (
+      (state.selectedTopic && state.selectedTopic !== 'Custom Search') ||
+      (state.selectedTopic === 'Custom Search' && state.customSearchTerms.length > 0)
+    )
+  }, [state.selectedSources.length, state.selectedTopic, state.customSearchTerms.length])
+
+  // Memoize filtered sources calculation
+  const filteredSources = useMemo(() => {
+    return unifiedSourceService.filterSources(state.allSources, {
+      languages: state.selectedLanguages,
+      countries: state.selectedCountries,
+      categories: [],
+      search: ''
+    })
+  }, [state.allSources, state.selectedLanguages, state.selectedCountries])
+
+  // Memoize available countries
+  const availableCountries = useMemo(() => {
+    return unifiedSourceService.getAvailableCountries(state.allSources)
+  }, [state.allSources])
 
   // Initialize sources with optimistic loading
   useEffect(() => {
@@ -170,8 +192,9 @@ function App() {
     }
   }
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setState(prev => ({
+      currentStep: 'landing',
       selectedSources: [],
       selectedTopic: '',
       customSearchTerms: [],
@@ -189,10 +212,10 @@ function App() {
       availableCountries: prev.availableCountries, // Keep available countries
       allSourcesLoaded: prev.allSourcesLoaded, // Keep loading status
     }))
-  }
+  }, [])
 
-  // Client-side filtering for performance
-  const applySourceFilters = (languages: NewsLanguage[], countries: string[]) => {
+  // Client-side filtering for performance - memoized to prevent unnecessary recalculation
+  const applySourceFilters = useCallback((languages: NewsLanguage[], countries: string[]) => {
     const filteredSources = unifiedSourceService.filterSources(state.allSources, {
       languages: languages,
       countries: countries,
@@ -208,26 +231,40 @@ function App() {
         filteredSources.some(source => source.id === id)
       )
     }))
-  }
+  }, [state.allSources])
 
-  const handleLanguagesChange = (languages: NewsLanguage[]) => {
+  const handleLanguagesChange = useCallback((languages: NewsLanguage[]) => {
     setState(prev => ({ ...prev, selectedLanguages: languages }))
     // Apply filters client-side for instant results
     applySourceFilters(languages, state.selectedCountries)
-  }
+  }, [applySourceFilters, state.selectedCountries])
 
-  const handleCountriesChange = (countries: string[]) => {
+  const handleCountriesChange = useCallback((countries: string[]) => {
     setState(prev => ({ ...prev, selectedCountries: countries }))
     // Apply filters client-side for instant results
     applySourceFilters(state.selectedLanguages, countries)
-  }
+  }, [applySourceFilters, state.selectedLanguages])
 
-  const handleDateRangeChange = (dateRange: DateRange) => {
+  const handleDateRangeChange = useCallback((dateRange: DateRange) => {
     setState(prev => ({ ...prev, selectedDateRange: dateRange }))
+  }, [])
+
+  const handleSortChange = useCallback((sort: NewsSortBy) => {
+    setState(prev => ({ ...prev, selectedSort: sort }))
+  }, [])
+
+  // Step navigation handlers
+  const handleContinueToModal = () => {
+    setState(prev => ({ ...prev, currentStep: 'modal' }))
   }
 
-  const handleSortChange = (sort: NewsSortBy) => {
-    setState(prev => ({ ...prev, selectedSort: sort }))
+  const handleBackToLanding = () => {
+    setState(prev => ({ ...prev, currentStep: 'landing' }))
+  }
+
+  const handleStartAnalysis = () => {
+    setState(prev => ({ ...prev, currentStep: 'results' }))
+    handleAnalyze()
   }
 
   const handleAnalyze = async () => {
@@ -408,186 +445,102 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header onReset={state.results ? handleReset : undefined} />
-      
-      <main className="max-w-4xl mx-auto px-4">
-        {!state.results ? (
-          <div className="min-h-[60vh] flex flex-col justify-center">
-            {/* Google-inspired centered layout */}
-            <div className="max-w-2xl mx-auto w-full space-y-8">
-              
-              {/* Main Search Area - Google-like focus */}
-              <div className="text-center space-y-6">
-                <div className="space-y-2">
-                  <h2 className="text-2xl font-normal text-gray-900">
-                    Compare perspectives on any topic
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    Select your sources and topic to discover opposing viewpoints
-                  </p>
-                </div>
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        // Log critical app errors
+        console.error('Critical App Error:', error, errorInfo)
+      }}
+    >
+      <div className="min-h-screen bg-gray-50">
+        <ErrorBoundary
+          onError={(error, errorInfo) => {
+            console.error('Header Error:', error, errorInfo)
+          }}
+          showReload={false}
+          className="mb-4"
+        >
+          <Header 
+            onReset={state.currentStep !== 'landing' ? handleReset : undefined}
+            onTitleClick={state.currentStep !== 'landing' ? handleBackToLanding : undefined}
+          />
+        </ErrorBoundary>
+        
+        {/* Step 1: Landing Page */}
+        {state.currentStep === 'landing' && (
+          <ErrorBoundary
+            onError={(error, errorInfo) => {
+              console.error('Landing Page Error:', error, errorInfo)
+            }}
+          >
+            <LandingPage
+              sources={filteredSources}
+              selectedSources={state.selectedSources}
+              onSourcesChange={(sources) => 
+                setState(prev => ({ ...prev, selectedSources: sources }))
+              }
+              onContinue={handleContinueToModal}
+              isLoadingSources={state.isLoadingSources}
+              allSourcesLoaded={state.allSourcesLoaded}
+            />
+          </ErrorBoundary>
+        )}
 
-                {/* Topic Selection - Search-like interface */}
-                <div className="space-y-4">
-                  <TopicSelector
-                    topics={TOPICS}
-                    selectedTopic={state.selectedTopic}
-                    onTopicChange={(topic) => 
-                      setState(prev => ({ ...prev, selectedTopic: topic }))
-                    }
-                    customSearchTerms={state.customSearchTerms}
-                    onCustomSearchTermsChange={(terms) =>
-                      setState(prev => ({ ...prev, customSearchTerms: terms }))
-                    }
-                  />
-                </div>
+        {/* Step 2: Topic Selection Modal */}
+        <ModalErrorBoundary
+          onClose={handleBackToLanding}
+          modalTitle="Topic Selection"
+          onError={(error, errorInfo) => {
+            console.error('Topic Selection Modal Error:', error, errorInfo)
+          }}
+        >
+          <TopicSelectionModal
+            topics={TOPICS}
+            selectedTopic={state.selectedTopic}
+            onTopicChange={(topic) => 
+              setState(prev => ({ ...prev, selectedTopic: topic }))
+            }
+            customSearchTerms={state.customSearchTerms}
+            onCustomSearchTermsChange={(terms) =>
+              setState(prev => ({ ...prev, customSearchTerms: terms }))
+            }
+            selectedLanguages={state.selectedLanguages}
+            onLanguagesChange={handleLanguagesChange}
+            selectedCountries={state.selectedCountries}
+            onCountriesChange={handleCountriesChange}
+            availableCountries={availableCountries}
+            selectedSort={state.selectedSort}
+            onSortChange={handleSortChange}
+            selectedDateRange={state.selectedDateRange}
+            onDateRangeChange={handleDateRangeChange}
+            timeOptions={TIME_OPTIONS}
+            isOpen={state.currentStep === 'modal'}
+            onClose={handleBackToLanding}
+            onAnalyze={handleStartAnalysis}
+            isLoading={state.isLoading}
+          />
+        </ModalErrorBoundary>
 
-                {/* Source Selection - Minimal */}
-                <div className="space-y-4">
-                  <SourceInput
-                    sources={state.availableSources}
-                    selectedSources={state.selectedSources}
-                    onSourcesChange={(sources) => 
-                      setState(prev => ({ ...prev, selectedSources: sources }))
-                    }
-                    isLoading={state.isLoadingSources}
-                    isDynamic={true}
-                    allSourcesLoaded={state.allSourcesLoaded}
-                  />
-                </div>
-
-                {/* Primary Action Button */}
-                <div className="pt-4">
-                  <button
-                    onClick={handleAnalyze}
-                    disabled={!canAnalyze || state.isLoading}
-                    className={`px-8 py-3 text-base font-medium rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                      canAnalyze && !state.isLoading
-                        ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    {state.isLoading ? 'Analyzing...' : 'Break My Bubble'}
-                  </button>
-                  
-                  {!canAnalyze && (
-                    <p className="mt-3 text-xs text-gray-500">
-                      Select at least one source and topic
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Advanced Options - Hidden by default */}
-              <div className="border-t border-gray-200 pt-6">
-                <FilterPanel
-                  selectedLanguages={state.selectedLanguages}
-                  onLanguagesChange={handleLanguagesChange}
-                  selectedCountries={state.selectedCountries}
-                  onCountriesChange={handleCountriesChange}
-                  availableCountries={state.availableCountries}
-                  selectedSort={state.selectedSort}
-                  onSortChange={handleSortChange}
-                  selectedDateRange={state.selectedDateRange}
-                  onDateRangeChange={handleDateRangeChange}
-                  timeOptions={TIME_OPTIONS}
-                />
-              </div>
-            </div>
-
-            {/* Debug Tools (only in development) - Less prominent */}
-            {import.meta.env.DEV && (
-              <div className="mt-12 pt-6 border-t border-gray-100">
-                <details className="text-center">
-                  <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600">
-                    Developer Tools
-                  </summary>
-                  <div className="mt-4 grid grid-cols-3 gap-2 max-w-md mx-auto">
-                    <button
-                      onClick={() => {
-                        console.log('🔧 Running topic filter debug...')
-                        debugTopicFiltering()
-                      }}
-                      className="px-2 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600"
-                    >
-                      Topic Filter
-                    </button>
-                    <button
-                      onClick={() => {
-                        console.log('🔧 Running NewsAPI debug...')
-                        debugNewsAPI()
-                      }}
-                      className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                      NewsAPI
-                    </button>
-                    <button
-                      onClick={() => {
-                        console.log('🔧 Running source validation...')
-                        debugSourceValidation()
-                      }}
-                      className="px-2 py-1 text-xs bg-indigo-500 text-white rounded hover:bg-indigo-600"
-                    >
-                      Sources
-                    </button>
-                    <button
-                      onClick={() => {
-                        console.log('🔧 Checking cache status...')
-                        debugCacheStatus()
-                      }}
-                      className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
-                    >
-                      Cache
-                    </button>
-                    <button
-                      onClick={() => {
-                        feedCache.clearCache()
-                        console.log('🗑️ Cache cleared')
-                      }}
-                      className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
-                    >
-                      Clear
-                    </button>
-                    <button
-                      onClick={() => {
-                        console.log('🎭 Running demo mode...')
-                        const demoArticles = getMockArticlesForDemo()
-                        console.log(`Got ${demoArticles.length} demo articles`)
-                        
-                        const topicData = TOPICS.find(t => t.topic === 'Climate Change')
-                        if (topicData) {
-                          const filtered = filterAndProcessArticles(demoArticles, topicData, 7, 'publishedAt', 20)
-                          const cnnSource = NEWS_SOURCES.find(s => s.id === 'cnn')
-                          const { userArticles, opposingArticles } = getOpposingPerspectives(cnnSource ? [cnnSource] : [], filtered, 'publishedAt')
-                          
-                          setState(prev => ({
-                            ...prev,
-                            selectedSources: ['cnn'],
-                            selectedTopic: 'Climate Change',
-                            results: { userArticles, opposingArticles }
-                          }))
-                        }
-                      }}
-                      className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
-                    >
-                      Demo
-                    </button>
-                  </div>
-                </details>
-              </div>
-            )}
-
+        {/* Step 3: Results Display */}
+        {state.currentStep === 'results' && (
+          <main className="max-w-4xl mx-auto px-4">
             {/* Loading State */}
             {state.isLoading && (
-              <div className="mt-12">
-                <LoadingState 
-                  message="Fetching articles from news sources..." 
-                />
-                <div className="mt-8">
-                  <ResultsLoadingSkeleton />
+              <ErrorBoundary
+                onError={(error, errorInfo) => {
+                  console.error('Loading State Error:', error, errorInfo)
+                }}
+                showReload={false}
+                className="mt-12"
+              >
+                <div className="mt-12">
+                  <LoadingState 
+                    message="Fetching articles from news sources..." 
+                  />
+                  <div className="mt-8">
+                    <ResultsLoadingSkeleton />
+                  </div>
                 </div>
-              </div>
+              </ErrorBoundary>
             )}
 
             {/* Error State */}
@@ -596,20 +549,122 @@ function App() {
                 <NetworkErrorMessage onRetry={handleAnalyze} />
               </div>
             )}
-          </div>
-        ) : (
-          /* Results Display */
-          <section>
-            <ResultsDisplay
-              userArticles={state.results.userArticles}
-              opposingArticles={state.results.opposingArticles}
-              topic={state.selectedTopic}
-              userSources={state.selectedSources}
-            />
-          </section>
+
+            {/* Results */}
+            {state.results && !state.isLoading && !state.error && (
+              <ResultsErrorBoundary
+                onRetrySearch={handleAnalyze}
+                onReset={handleReset}
+                searchTopic={state.selectedTopic}
+                userSources={state.selectedSources}
+                onError={(error, errorInfo) => {
+                  console.error('Results Display Error:', error, errorInfo)
+                }}
+              >
+                <section>
+                  <ResultsDisplay
+                    userArticles={state.results.userArticles}
+                    opposingArticles={state.results.opposingArticles}
+                    topic={state.selectedTopic}
+                    userSources={state.selectedSources}
+                  />
+                </section>
+              </ResultsErrorBoundary>
+            )}
+          </main>
         )}
-      </main>
-    </div>
+
+        {/* Debug Tools (only in development) */}
+        {import.meta.env.DEV && state.currentStep === 'landing' && (
+          <ErrorBoundary
+            onError={(error, errorInfo) => {
+              console.error('Debug Tools Error:', error, errorInfo)
+            }}
+            showReload={false}
+          >
+            <div className="fixed bottom-4 right-4">
+              <details className="text-center">
+                <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600 bg-white px-3 py-2 rounded-lg shadow">
+                  Dev Tools
+                </summary>
+                <div className="mt-2 grid grid-cols-2 gap-1 bg-white p-2 rounded-lg shadow-lg">
+                  <button
+                    onClick={() => {
+                      console.log('🔧 Running topic filter debug...')
+                      debugTopicFiltering()
+                    }}
+                    className="px-2 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600"
+                  >
+                    Topic Filter
+                  </button>
+                  <button
+                    onClick={() => {
+                      console.log('🔧 Running NewsAPI debug...')
+                      debugNewsAPI()
+                    }}
+                    className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    NewsAPI
+                  </button>
+                  <button
+                    onClick={() => {
+                      console.log('🔧 Running source validation...')
+                      debugSourceValidation()
+                    }}
+                    className="px-2 py-1 text-xs bg-indigo-500 text-white rounded hover:bg-indigo-600"
+                  >
+                    Sources
+                  </button>
+                  <button
+                    onClick={() => {
+                      console.log('🔧 Checking cache status...')
+                      debugCacheStatus()
+                    }}
+                    className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+                  >
+                    Cache
+                  </button>
+                  <button
+                    onClick={() => {
+                      feedCache.clearCache()
+                      console.log('🗑️ Cache cleared')
+                    }}
+                    className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={() => {
+                      console.log('🎭 Running demo mode...')
+                      const demoArticles = getMockArticlesForDemo()
+                      console.log(`Got ${demoArticles.length} demo articles`)
+                      
+                      const topicData = TOPICS.find(t => t.topic === 'Climate Change')
+                      if (topicData) {
+                        const filtered = filterAndProcessArticles(demoArticles, topicData, 7, 'publishedAt', 20)
+                        const cnnSource = NEWS_SOURCES.find(s => s.id === 'cnn')
+                        const { userArticles, opposingArticles } = getOpposingPerspectives(cnnSource ? [cnnSource] : [], filtered, 'publishedAt')
+                        
+                        setState(prev => ({
+                          ...prev,
+                          currentStep: 'results',
+                          selectedSources: ['cnn'],
+                          selectedTopic: 'Climate Change',
+                          results: { userArticles, opposingArticles }
+                        }))
+                      }
+                    }}
+                    className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                  >
+                    Demo
+                  </button>
+                </div>
+              </details>
+            </div>
+          </ErrorBoundary>
+        )}
+      </div>
+    </ErrorBoundary>
   )
 }
 

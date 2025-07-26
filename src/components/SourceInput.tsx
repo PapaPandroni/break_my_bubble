@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { NewsSource, NewsCategory, SourceFilters } from '../types'
 import { filterSources } from '../services/unifiedSourceService'
+import { getPoliticalLeanColor, getPoliticalLeanLabel } from '../utils/politicalLean'
+import { getCredibilityIndicator, getCategoryIcon } from '../utils/sourceUtils'
 
 interface SourceInputProps {
   sources: NewsSource[]
@@ -44,58 +46,6 @@ export default function SourceInput({
     }
   }
 
-  const getPoliticalLeanColor = (lean: 'left' | 'lean-left' | 'center' | 'lean-right' | 'right' | 'unknown') => {
-    switch (lean) {
-      case 'left':
-        return 'bg-blue-200 text-blue-800 border-blue-400'
-      case 'lean-left':
-        return 'bg-blue-100 text-blue-700 border-blue-300'
-      case 'center':
-        return 'bg-gray-100 text-gray-700 border-gray-300'
-      case 'lean-right':
-        return 'bg-red-100 text-red-700 border-red-300'
-      case 'right':
-        return 'bg-red-200 text-red-800 border-red-400'
-      case 'unknown':
-        return 'bg-amber-100 text-amber-700 border-amber-300'
-    }
-  }
-
-  const getPoliticalLeanLabel = (lean: 'left' | 'lean-left' | 'center' | 'lean-right' | 'right' | 'unknown') => {
-    switch (lean) {
-      case 'left':
-        return 'Left'
-      case 'lean-left':
-        return 'Lean Left'
-      case 'center':
-        return 'Center'
-      case 'lean-right':
-        return 'Lean Right'
-      case 'right':
-        return 'Right'
-      case 'unknown':
-        return 'Unknown'
-    }
-  }
-
-  const getCredibilityIndicator = (credibility: number) => {
-    if (credibility >= 0.8) return { emoji: '🟢', text: 'High', color: 'text-green-600' };
-    if (credibility >= 0.6) return { emoji: '🟡', text: 'Medium', color: 'text-yellow-600' };
-    return { emoji: '🔴', text: 'Low', color: 'text-red-600' };
-  }
-
-  const getCategoryIcon = (category: NewsCategory) => {
-    const icons = {
-      business: '💼',
-      entertainment: '🎭',
-      general: '📰',
-      health: '🏥',
-      science: '🔬',
-      sports: '⚽',
-      technology: '💻'
-    };
-    return icons[category] || '📰';
-  }
 
   // Filter sources based on search and category
   const filteredSources = useMemo(() => {
@@ -130,14 +80,11 @@ export default function SourceInput({
   return (
     <div className="space-y-3">
       <div>
-        <div className="text-center mb-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Your news sources
-          </label>
-          {isDynamic && !allSourcesLoaded && (
+        {isDynamic && !allSourcesLoaded && (
+          <div className="text-center mb-3">
             <p className="text-xs text-blue-600">Loading sources...</p>
-          )}
-        </div>
+          </div>
+        )}
         
         {isDynamic && sources.length > 10 && (
           <div className="text-center mb-3">
@@ -157,9 +104,6 @@ export default function SourceInput({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Category Filter */}
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Filter by Category
-                </label>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value as NewsCategory | '')}
@@ -234,7 +178,7 @@ export default function SourceInput({
             {selectedSources.length >= maxSources 
               ? 'Maximum sources selected' 
               : selectedSources.length === 0
-                ? 'Add news sources'
+                ? 'Choose your news sources'
                 : 'Add more sources'}
           </span>
           {sources.length > 0 && (
@@ -339,8 +283,8 @@ export default function SourceInput({
       </div>
 
       {selectedSources.length < minSources && (
-        <p className="text-xs text-amber-600 text-center">
-          Select at least {minSources} source{minSources > 1 ? 's' : ''}
+        <p className="text-xs text-gray-500 text-center">
+          Select {minSources === 1 ? 'a' : `${minSources}`} source{minSources > 1 ? 's' : ''} to continue
         </p>
       )}
       

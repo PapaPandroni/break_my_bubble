@@ -157,3 +157,6 @@ export interface PoliticalLeanMapping {
     confidence: number; // 0-1, how confident we are in this classification
   };
 }
+
+// App flow types
+export type AppStep = 'landing' | 'modal' | 'results'

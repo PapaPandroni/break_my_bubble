@@ -1,16 +1,22 @@
 # BreakMyBubble 🎯
 
-A sophisticated news analysis web application that helps users identify their news consumption "bubble" by comparing headlines from their preferred news sources against opposing perspectives on chosen topics. Features dual-mode operation with RSS feeds and comprehensive NewsAPI integration.
+A sophisticated news analysis web application with a streamlined three-step interface that helps users discover opposing perspectives. Built on a "show, don't tell" design philosophy, the app features dramatic UI simplification while maintaining comprehensive NewsAPI integration and multilanguage support.
 
 ![BreakMyBubble](https://img.shields.io/badge/Status-Production%20Ready-green) ![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue) ![NewsAPI](https://img.shields.io/badge/NewsAPI-Integrated-orange)
 
 ## 🌟 Key Features
 
+### Simplified User Experience
+- **Three-Step Flow**: Landing → Topic Selection → Results (no complex navigation)
+- **"Show, Don't Tell" Design**: Interface communicates through visual design, not verbose text
+- **Custom Search Priority**: User-defined search terms prominently featured
+- **Streamlined Interactions**: Minimal clicks, maximum impact
+
 ### Core Functionality
-- **Dual-Mode Operation**: RSS feeds (basic) + NewsAPI (advanced) with automatic fallback
+- **NewsAPI-Powered**: Comprehensive NewsAPI integration with intelligent caching
 - **Source Comparison**: Select 1-5 preferred news sources and discover opposing perspectives  
 - **5-Point Political Analysis**: Enhanced political lean classification (left/lean-left/center/lean-right/right)
-- **Topic-Based Filtering**: 5 key topics with intelligent keyword matching
+- **Multilanguage Search**: 14 languages with professional translations and free text search
 - **International Coverage**: 27+ classified international news sources
 
 ### Advanced NewsAPI Features
@@ -22,10 +28,11 @@ A sophisticated news analysis web application that helps users identify their ne
 - **Smart Caching**: Optimized performance with intelligent cache strategies
 
 ### User Experience
-- **Mobile-First Design**: Responsive across all devices
-- **Accessibility**: Full keyboard navigation and screen reader support
-- **Performance**: Sub-second load times with smart caching
-- **Error Recovery**: Graceful fallbacks and user-friendly error handling
+- **Mobile-First Design**: Responsive across all devices with Google-inspired layout
+- **Accessibility**: Full keyboard navigation, focus management, and screen reader support
+- **Performance**: Sub-second load times with memoization and smart caching
+- **Error Recovery**: Comprehensive error boundaries and graceful fallback systems
+- **Memory Leak Prevention**: Robust cleanup systems and optimized component lifecycle
 
 ## 🚀 Live Demo
 
@@ -112,37 +119,47 @@ VITE_DEBUG_MODE=false  # Disable debug features
 
 ## 🎯 How It Works
 
-### User Journey
-1. **Choose Mode**: Automatic detection of NewsAPI availability
-2. **Select Sources**: 1-5 news sources from curated list or dynamic discovery
-3. **Advanced Filtering**: Language, country, date range, sort preferences (NewsAPI mode)  
-4. **Pick Topic**: Climate Change, Healthcare, Immigration, Economy, or Technology
-5. **Analyze Perspectives**: Side-by-side comparison with opposing viewpoints
-6. **Explore Articles**: Enhanced articles with images, authors, and content previews
+### Three-Step User Journey
+1. **Landing Page**: Clean, Google-inspired interface for source selection
+   - Simplified hero section without verbose explanations
+   - Streamlined source input with dynamic loading
+   - FAQ section for user education
+
+2. **Topic Selection Modal**: Focused topic and filter selection
+   - Custom search prominently featured at top
+   - Collapsed advanced options (languages, countries, dates, sorting)
+   - Clear visual hierarchy and minimal instructional text
+
+3. **Results Display**: Side-by-side comparison with enhanced error handling
+   - Comprehensive error boundaries for robust user experience
+   - Enhanced articles with images, authors, and content previews
+   - Intelligent opposing perspective algorithms
 
 ### Technical Architecture
 ```
 ┌─────────────────┐
-│   React App     │
+│  React App      │ ◄── Three-step flow
+│  (App.tsx)      │     (landing → modal → results)
 └─────────┬───────┘
           │
 ┌─────────▼───────┐
-│ Unified Service │ ◄── Dual-mode operation
+│ Step Components │ ◄── Error boundaries
+│ + Error Handling│     & focus management
 └─────────┬───────┘
           │
-    ┌─────┼─────┐
-    ▼     ▼     ▼
-┌─────┐ ┌────┐ ┌────────────┐
-│ RSS │ │API │ │ Dynamic    │
-│Mode │ │Mode│ │ Sources    │
-└─────┘ └────┘ └────────────┘
-    │     │          │
-    └─────┼──────────┘
-          ▼
-   ┌─────────────┐
-   │ Filter &    │
-   │ Analysis    │
-   └─────────────┘
+    ┌─────┼─────────────┐
+    ▼     ▼             ▼
+┌─────┐ ┌──────┐ ┌──────────────┐
+│Land-│ │Topic │ │   Results    │
+│ing  │ │Modal │ │   Display    │
+└─────┘ └──────┘ └──────────────┘
+    │      │            │
+    └──────┼────────────┘
+           ▼
+    ┌─────────────────┐
+    │ NewsAPI Service │ ◄── Enhanced caching
+    │ + Filter Logic  │     & multilanguage
+    └─────────────────┘
 ```
 
 ## 📁 Project Structure
@@ -150,19 +167,22 @@ VITE_DEBUG_MODE=false  # Disable debug features
 ```
 break-my-bubble/
 ├── src/
-│   ├── components/         # 12 React components
-│   │   ├── CountrySelector.tsx    # 54 countries
-│   │   ├── LanguageSelector.tsx   # 14 languages  
-│   │   ├── DateRangePicker.tsx    # Custom dates
+│   ├── components/         # 15+ React components
+│   │   ├── LandingPage.tsx        # New: Google-inspired landing
+│   │   ├── TopicSelectionModal.tsx # New: Streamlined modal
+│   │   ├── FAQ.tsx                # New: User education
+│   │   ├── ErrorBoundary.tsx      # Enhanced error handling
+│   │   ├── CustomSearchInput.tsx  # Free text search
 │   │   └── ResultsDisplay.tsx     # Enhanced articles
-│   ├── services/          # 9 business logic services
+│   ├── services/          # 6 optimized business logic services
 │   │   ├── newsApiService.ts      # Full NewsAPI integration
-│   │   ├── dynamicSourceService.ts # Source discovery
 │   │   ├── filterService.ts       # Analysis algorithms
-│   │   └── unifiedSourceService.ts # Dual-mode orchestration
+│   │   ├── cacheService.ts        # Smart caching system
+│   │   └── unifiedSourceService.ts # Source management
+│   ├── constants/         # New: Shared constants
+│   ├── utils/             # New: Helper functions & utilities
 │   ├── data/              # Static configuration
-│   ├── types/             # TypeScript definitions
-│   └── utils/             # Helper functions
+│   └── types/             # TypeScript definitions (AppStep, etc.)
 ├── scripts/               # Automation tools
 ├── .claude/              # Claude Code configuration
 └── docs/                 # Comprehensive documentation
@@ -286,5 +306,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 *"The best way to break your news bubble is to actively seek diverse perspectives and think critically about all sources of information."*
 
-**Version 2.1** - International Sources & Enhanced Classification System  
+**Version 3.0** - Major UI Simplification & Three-Step Architecture  
 **Last Updated**: July 2025
+
+*Previous versions: v2.3 (API-Only Architecture), v2.1 (International Sources)*

@@ -1,7 +1,6 @@
 import { TopicKeywords } from '../types'
 import CustomSearchInput from './CustomSearchInput'
-
-const CUSTOM_SEARCH_TOPIC = 'Custom Search'
+import { CUSTOM_SEARCH_TOPIC } from '../constants'
 
 interface TopicSelectorProps {
   topics: TopicKeywords[]
@@ -45,7 +44,24 @@ export default function TopicSelector({
           })}
         </div>
 
-        {/* More topics and custom search */}
+        {/* Custom Search Option - Prominent */}
+        <div className="flex justify-center mb-3">
+          <button
+            onClick={() => onTopicChange(CUSTOM_SEARCH_TOPIC)}
+            className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+              selectedTopic === CUSTOM_SEARCH_TOPIC
+                ? 'bg-purple-600 text-white shadow-lg transform scale-105'
+                : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 hover:shadow-md'
+            }`}
+            aria-pressed={selectedTopic === CUSTOM_SEARCH_TOPIC}
+            title="Search anything you want"
+          >
+            <span className="mr-2">🔍</span>
+            {CUSTOM_SEARCH_TOPIC}
+          </button>
+        </div>
+
+        {/* More topics */}
         <div className="flex flex-wrap justify-center gap-2">
           {topics.slice(6).map((topic) => {
             const isSelected = selectedTopic === topic.topic
@@ -66,21 +82,6 @@ export default function TopicSelector({
               </button>
             )
           })}
-          
-          {/* Custom Search Option */}
-          <button
-            onClick={() => onTopicChange(CUSTOM_SEARCH_TOPIC)}
-            className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
-              selectedTopic === CUSTOM_SEARCH_TOPIC
-                ? 'bg-purple-600 text-white shadow-md'
-                : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
-            }`}
-            aria-pressed={selectedTopic === CUSTOM_SEARCH_TOPIC}
-            title="Enter your own search terms"
-          >
-            <span className="mr-1">🔍</span>
-            {CUSTOM_SEARCH_TOPIC}
-          </button>
         </div>
       </div>
 
