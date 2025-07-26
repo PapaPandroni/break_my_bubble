@@ -411,43 +411,76 @@ function App() {
     <div className="min-h-screen bg-gray-50">
       <Header onReset={state.results ? handleReset : undefined} />
       
-      <main className="max-w-6xl mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto px-4">
         {!state.results ? (
-          <div className="space-y-8">
+          <div className="min-h-[60vh] flex flex-col justify-center">
+            {/* Google-inspired centered layout */}
+            <div className="max-w-2xl mx-auto w-full space-y-8">
+              
+              {/* Main Search Area - Google-like focus */}
+              <div className="text-center space-y-6">
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-normal text-gray-900">
+                    Compare perspectives on any topic
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    Select your sources and topic to discover opposing viewpoints
+                  </p>
+                </div>
 
-            {/* Main Interface - Progressive Disclosure */}
-            <div className="max-w-4xl mx-auto space-y-6">
-              {/* Primary Action: Source Selection */}
-              <section>
-                <SourceInput
-                  sources={state.availableSources}
-                  selectedSources={state.selectedSources}
-                  onSourcesChange={(sources) => 
-                    setState(prev => ({ ...prev, selectedSources: sources }))
-                  }
-                  isLoading={state.isLoadingSources}
-                  isDynamic={true}
-                  allSourcesLoaded={state.allSourcesLoaded}
-                />
-              </section>
+                {/* Topic Selection - Search-like interface */}
+                <div className="space-y-4">
+                  <TopicSelector
+                    topics={TOPICS}
+                    selectedTopic={state.selectedTopic}
+                    onTopicChange={(topic) => 
+                      setState(prev => ({ ...prev, selectedTopic: topic }))
+                    }
+                    customSearchTerms={state.customSearchTerms}
+                    onCustomSearchTermsChange={(terms) =>
+                      setState(prev => ({ ...prev, customSearchTerms: terms }))
+                    }
+                  />
+                </div>
 
-              {/* Secondary Action: Topic Selection */}
-              <section>
-                <TopicSelector
-                  topics={TOPICS}
-                  selectedTopic={state.selectedTopic}
-                  onTopicChange={(topic) => 
-                    setState(prev => ({ ...prev, selectedTopic: topic }))
-                  }
-                  customSearchTerms={state.customSearchTerms}
-                  onCustomSearchTermsChange={(terms) =>
-                    setState(prev => ({ ...prev, customSearchTerms: terms }))
-                  }
-                />
-              </section>
+                {/* Source Selection - Minimal */}
+                <div className="space-y-4">
+                  <SourceInput
+                    sources={state.availableSources}
+                    selectedSources={state.selectedSources}
+                    onSourcesChange={(sources) => 
+                      setState(prev => ({ ...prev, selectedSources: sources }))
+                    }
+                    isLoading={state.isLoadingSources}
+                    isDynamic={true}
+                    allSourcesLoaded={state.allSourcesLoaded}
+                  />
+                </div>
 
-              {/* Advanced Options: Collapsible Filter Panel */}
-              <section>
+                {/* Primary Action Button */}
+                <div className="pt-4">
+                  <button
+                    onClick={handleAnalyze}
+                    disabled={!canAnalyze || state.isLoading}
+                    className={`px-8 py-3 text-base font-medium rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      canAnalyze && !state.isLoading
+                        ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    {state.isLoading ? 'Analyzing...' : 'Break My Bubble'}
+                  </button>
+                  
+                  {!canAnalyze && (
+                    <p className="mt-3 text-xs text-gray-500">
+                      Select at least one source and topic
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Advanced Options - Hidden by default */}
+              <div className="border-t border-gray-200 pt-6">
                 <FilterPanel
                   selectedLanguages={state.selectedLanguages}
                   onLanguagesChange={handleLanguagesChange}
@@ -460,80 +493,61 @@ function App() {
                   onDateRangeChange={handleDateRangeChange}
                   timeOptions={TIME_OPTIONS}
                 />
-              </section>
+              </div>
             </div>
 
-            {/* Analyze Button */}
-            <section className="text-center space-y-4">
-              <div>
-                <button
-                  onClick={handleAnalyze}
-                  disabled={!canAnalyze || state.isLoading}
-                  className={`px-8 py-4 text-lg font-semibold rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                    canAnalyze && !state.isLoading
-                      ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  {state.isLoading ? 'Analyzing...' : 'Break My Bubble!'}
-                </button>
-                
-                {!canAnalyze && (
-                  <p className="mt-2 text-sm text-gray-500">
-                    Please select at least one source and a topic to continue
-                  </p>
-                )}
-              </div>
-
-              {/* Debug Button (only in development) */}
-              {import.meta.env.DEV && (
-                <div className="pt-4 border-t border-gray-200">
-                  <p className="text-xs text-gray-500 mb-2">Development Tools</p>
-                  <div className="grid grid-cols-2 gap-2">
+            {/* Debug Tools (only in development) - Less prominent */}
+            {import.meta.env.DEV && (
+              <div className="mt-12 pt-6 border-t border-gray-100">
+                <details className="text-center">
+                  <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600">
+                    Developer Tools
+                  </summary>
+                  <div className="mt-4 grid grid-cols-3 gap-2 max-w-md mx-auto">
                     <button
                       onClick={() => {
                         console.log('🔧 Running topic filter debug...')
                         debugTopicFiltering()
                       }}
-                      className="px-3 py-2 text-sm bg-purple-500 text-white rounded hover:bg-purple-600"
+                      className="px-2 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600"
                     >
-                      Test Topic Filtering
+                      Topic Filter
                     </button>
                     <button
                       onClick={() => {
                         console.log('🔧 Running NewsAPI debug...')
                         debugNewsAPI()
                       }}
-                      className="px-3 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                      className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
                     >
-                      Test NewsAPI
+                      NewsAPI
                     </button>
                     <button
                       onClick={() => {
                         console.log('🔧 Running source validation...')
                         debugSourceValidation()
                       }}
-                      className="px-3 py-2 text-sm bg-indigo-500 text-white rounded hover:bg-indigo-600"
+                      className="px-2 py-1 text-xs bg-indigo-500 text-white rounded hover:bg-indigo-600"
                     >
-                      Validate Sources
+                      Sources
                     </button>
                     <button
                       onClick={() => {
                         console.log('🔧 Checking cache status...')
                         debugCacheStatus()
                       }}
-                      className="px-3 py-2 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
+                      className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
                     >
-                      Cache Status
+                      Cache
                     </button>
                     <button
                       onClick={() => {
                         feedCache.clearCache()
                         console.log('🗑️ Cache cleared')
                       }}
-                      className="px-3 py-2 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+                      className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
                     >
-                      Clear Cache
+                      Clear
                     </button>
                     <button
                       onClick={() => {
@@ -541,7 +555,6 @@ function App() {
                         const demoArticles = getMockArticlesForDemo()
                         console.log(`Got ${demoArticles.length} demo articles`)
                         
-                        // Process demo articles
                         const topicData = TOPICS.find(t => t.topic === 'Climate Change')
                         if (topicData) {
                           const filtered = filterAndProcessArticles(demoArticles, topicData, 7, 'publishedAt', 20)
@@ -556,32 +569,32 @@ function App() {
                           }))
                         }
                       }}
-                      className="px-4 py-2 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                      className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
                     >
-                      Demo Mode
+                      Demo
                     </button>
                   </div>
-                </div>
-              )}
-            </section>
+                </details>
+              </div>
+            )}
 
             {/* Loading State */}
             {state.isLoading && (
-              <section>
+              <div className="mt-12">
                 <LoadingState 
                   message="Fetching articles from news sources..." 
                 />
                 <div className="mt-8">
                   <ResultsLoadingSkeleton />
                 </div>
-              </section>
+              </div>
             )}
 
             {/* Error State */}
             {state.error && (
-              <section>
+              <div className="mt-12">
                 <NetworkErrorMessage onRetry={handleAnalyze} />
-              </section>
+              </div>
             )}
           </div>
         ) : (

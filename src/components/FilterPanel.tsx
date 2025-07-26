@@ -48,36 +48,31 @@ export default function FilterPanel({
 
   return (
     <div className="space-y-4">
-      {/* Filter Toggle Button */}
-      <div className="flex items-center justify-center">
+      {/* Subtle Filter Toggle - Google-inspired */}
+      <div className="text-center">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          className="inline-flex items-center px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
         >
-          <span className="mr-2">🔧</span>
-          <span>Filters</span>
+          <span className="mr-1">⚙️</span>
+          <span>Advanced options</span>
           {activeFiltersCount > 0 && (
-            <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full">
+            <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs font-medium text-white bg-blue-500 rounded-full">
               {activeFiltersCount}
             </span>
           )}
-          <span className="ml-2 text-gray-400">
-            {isExpanded ? '▲' : '▼'}
+          <span className="ml-1 text-xs">
+            {isExpanded ? '−' : '+'}
           </span>
         </button>
       </div>
 
       {/* Collapsible Filter Panel */}
       {isExpanded && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 space-y-6 animate-in fade-in duration-200">
-          <div className="text-center">
-            <h3 className="text-lg font-medium text-gray-900 mb-1">Advanced Filters</h3>
-            <p className="text-sm text-gray-600">Customize your news search parameters</p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-5 shadow-sm animate-in fade-in duration-200">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {/* Language Selection */}
-            <div className="space-y-4">
+            <div>
               <LanguageSelector
                 selectedLanguages={selectedLanguages}
                 onLanguagesChange={onLanguagesChange}
@@ -86,7 +81,7 @@ export default function FilterPanel({
             </div>
 
             {/* Country Selection */}
-            <div className="space-y-4">
+            <div>
               <CountrySelector
                 selectedCountries={selectedCountries}
                 onCountriesChange={onCountriesChange}
@@ -96,7 +91,7 @@ export default function FilterPanel({
             </div>
 
             {/* Sort Options */}
-            <div className="space-y-4">
+            <div>
               <SortSelector
                 selectedSort={selectedSort}
                 onSortChange={onSortChange}
@@ -105,7 +100,7 @@ export default function FilterPanel({
             </div>
 
             {/* Date Range */}
-            <div className="space-y-4">
+            <div>
               <DateRangePicker
                 timeOptions={timeOptions}
                 selectedRange={selectedDateRange}
@@ -116,7 +111,7 @@ export default function FilterPanel({
 
           {/* Reset Filters Button */}
           {activeFiltersCount > 0 && (
-            <div className="text-center pt-4 border-t border-gray-300">
+            <div className="text-center pt-3 border-t border-gray-100">
               <button
                 onClick={() => {
                   onLanguagesChange(['en'])
@@ -124,9 +119,9 @@ export default function FilterPanel({
                   onSortChange('relevancy')
                   onDateRangeChange({ type: 'preset', days: 7, label: 'Last week' })
                 }}
-                className="text-sm text-gray-600 hover:text-gray-800 underline focus:outline-none"
+                className="text-xs text-gray-500 hover:text-gray-700 focus:outline-none"
               >
-                Reset all filters
+                Reset filters
               </button>
             </div>
           )}

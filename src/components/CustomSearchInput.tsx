@@ -69,17 +69,14 @@ export default function CustomSearchInput({
 
   return (
     <div className="space-y-2">
-      {/* Input Label */}
-      <div className="flex items-center justify-between">
-        <label className="block text-sm font-medium text-gray-700">
-          Custom Search Terms
-        </label>
-        {currentTermCount > 0 && (
-          <span className={`text-xs ${currentTermCount >= maxTerms ? 'text-red-600' : 'text-gray-500'}`}>
-            {currentTermCount}/{maxTerms} terms
+      {/* Term counter - minimal */}
+      {currentTermCount > 0 && (
+        <div className="text-right">
+          <span className={`text-xs ${currentTermCount >= maxTerms ? 'text-red-600' : 'text-gray-400'}`}>
+            {currentTermCount}/{maxTerms}
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Search Input */}
       <div className="relative">
@@ -115,60 +112,36 @@ export default function CustomSearchInput({
         )}
       </div>
 
-      {/* Parsed Terms Display */}
+      {/* Parsed Terms - clean display */}
       {searchTerms.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs text-gray-600">Your search terms:</p>
-          <div className="flex flex-wrap gap-2">
-            {searchTerms.map((term, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full"
+        <div className="flex flex-wrap gap-1.5">
+          {searchTerms.map((term, index) => (
+            <span
+              key={index}
+              className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full"
+            >
+              {term}
+              <button
+                onClick={() => {
+                  const newTerms = searchTerms.filter((_, i) => i !== index)
+                  onSearchTermsChange(newTerms)
+                  setInputValue(newTerms.join(', '))
+                }}
+                className="ml-1 text-purple-600 hover:text-purple-800 focus:outline-none"
+                aria-label={`Remove "${term}"`}
               >
-                {term}
-                <button
-                  onClick={() => {
-                    const newTerms = searchTerms.filter((_, i) => i !== index)
-                    onSearchTermsChange(newTerms)
-                    setInputValue(newTerms.join(', '))
-                  }}
-                  className="ml-1 text-blue-600 hover:text-blue-800 focus:outline-none"
-                  aria-label={`Remove "${term}"`}
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </span>
-            ))}
-          </div>
+                ×
+              </button>
+            </span>
+          ))}
         </div>
       )}
 
-      {/* Help Text */}
-      <div className="text-xs text-gray-500 space-y-1">
-        <p>💡 <strong>Tips:</strong></p>
-        <ul className="ml-4 space-y-0.5">
-          <li>• Separate terms with commas or spaces</li>
-          <li>• Use specific keywords for better results</li>
-          <li>• Press Enter when done, Escape to clear all</li>
-          <li>• Works with any language</li>
-        </ul>
-      </div>
-
-      {/* Warning for too many terms */}
+      {/* Minimal warning for too many terms */}
       {currentTermCount >= maxTerms && (
-        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
-          <div className="flex items-start">
-            <span className="mr-2">⚠️</span>
-            <div>
-              <div className="font-medium">Too many search terms</div>
-              <div className="text-xs mt-1">
-                Only the first {maxTerms} terms will be used. Consider using more specific keywords for better results.
-              </div>
-            </div>
-          </div>
-        </div>
+        <p className="text-xs text-red-600 text-center">
+          Maximum {maxTerms} terms
+        </p>
       )}
     </div>
   )

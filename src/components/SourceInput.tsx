@@ -128,27 +128,25 @@ export default function SourceInput({
   }, [showDropdown]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div>
-        <div className="text-center mb-4">
-          <label className="block text-lg font-medium text-gray-900 mb-2">
-            What do you typically read?
+        <div className="text-center mb-3">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Your news sources
           </label>
-          <p className="text-sm text-gray-600">
-            Select {minSources}-{maxSources} sources to get opposing perspectives
-            {isDynamic && !allSourcesLoaded && (
-              <span className="text-blue-600"> • Loading more sources...</span>
-            )}
-          </p>
+          {isDynamic && !allSourcesLoaded && (
+            <p className="text-xs text-blue-600">Loading sources...</p>
+          )}
         </div>
         
         {isDynamic && sources.length > 10 && (
           <div className="text-center mb-3">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="text-xs text-gray-500 hover:text-gray-700 focus:outline-none underline"
+              className="inline-flex items-center text-xs text-gray-400 hover:text-gray-600 focus:outline-none"
             >
-              {showFilters ? 'Hide source filters' : 'Filter sources'}
+              <span className="mr-1">⚙️</span>
+              {showFilters ? 'Hide filters' : 'Filter'}
             </button>
           </div>
         )}
@@ -187,37 +185,34 @@ export default function SourceInput({
 
       {/* Selected Sources Display */}
       {selectedSources.length > 0 && (
-        <div className="space-y-3">
-          <div className="text-center">
-            <div className="text-sm text-gray-600 mb-2">Your sources ({selectedSources.length}/{maxSources}):</div>
-            <div className="flex flex-wrap justify-center gap-2">
-              {selectedSourcesData.map((source) => {
-                const credibility = getCredibilityIndicator(source.credibility);
-                return (
-                  <span
-                    key={source.id}
-                    className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium border-2 shadow-sm ${getPoliticalLeanColor(source.politicalLean)}`}
-                  >
-                    <span className="flex items-center gap-1">
-                      {source.category && getCategoryIcon(source.category)}
-                      {source.name}
-                      {isDynamic && (
-                        <span className={`text-xs ${credibility.color}`} title={`Credibility: ${credibility.text}`}>
-                          {credibility.emoji}
-                        </span>
-                      )}
-                    </span>
-                    <button
-                      onClick={() => handleSourceToggle(source.id)}
-                      className="ml-2 text-lg leading-none hover:bg-black hover:bg-opacity-10 rounded-full w-5 h-5 flex items-center justify-center transition-colors"
-                      aria-label={`Remove ${source.name}`}
-                    >
-                      ×
-                    </button>
+        <div className="text-center mb-3">
+          <div className="flex flex-wrap justify-center gap-2">
+            {selectedSourcesData.map((source) => {
+              const credibility = getCredibilityIndicator(source.credibility);
+              return (
+                <span
+                  key={source.id}
+                  className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium border ${getPoliticalLeanColor(source.politicalLean)}`}
+                >
+                  <span className="flex items-center gap-1">
+                    {source.category && getCategoryIcon(source.category)}
+                    {source.name}
+                    {isDynamic && (
+                      <span className={`text-xs ${credibility.color}`} title={`Credibility: ${credibility.text}`}>
+                        {credibility.emoji}
+                      </span>
+                    )}
                   </span>
-                );
-              })}
-            </div>
+                  <button
+                    onClick={() => handleSourceToggle(source.id)}
+                    className="ml-1.5 text-sm leading-none hover:bg-black hover:bg-opacity-10 rounded-full w-4 h-4 flex items-center justify-center transition-colors"
+                    aria-label={`Remove ${source.name}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              );
+            })}
           </div>
         </div>
       )}
@@ -226,25 +221,27 @@ export default function SourceInput({
       <div className="relative">
         <button
           onClick={() => setShowDropdown(!showDropdown)}
-          className={`w-full px-6 py-4 text-center bg-white border-2 rounded-xl shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all ${
+          className={`w-full px-4 py-3 text-center bg-white border rounded-lg shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all ${
             selectedSources.length >= maxSources 
               ? 'border-gray-300 text-gray-500' 
-              : 'border-blue-300 text-blue-700 hover:border-blue-400'
+              : 'border-gray-300 text-gray-700 hover:border-blue-300'
           }`}
           disabled={selectedSources.length >= maxSources}
           aria-expanded={showDropdown}
           aria-haspopup="listbox"
         >
-          <span className="font-medium">
+          <span className="text-sm">
             {selectedSources.length >= maxSources 
-              ? 'Maximum sources selected ✓' 
+              ? 'Maximum sources selected' 
               : selectedSources.length === 0
-                ? '+ Add your news sources'
-                : '+ Add more sources'}
+                ? 'Add news sources'
+                : 'Add more sources'}
           </span>
-          <span className="block text-xs opacity-75 mt-1">
-            {!allSourcesLoaded ? 'Loading sources...' : showDropdown ? 'Click to close' : `${sources.length} available`}
-          </span>
+          {sources.length > 0 && (
+            <span className="block text-xs text-gray-500 mt-1">
+              {!allSourcesLoaded ? 'Loading...' : `${sources.length} available`}
+            </span>
+          )}
         </button>
 
         {showDropdown && (
@@ -342,14 +339,14 @@ export default function SourceInput({
       </div>
 
       {selectedSources.length < minSources && (
-        <p className="text-sm text-amber-600">
-          Please select at least {minSources} source{minSources > 1 ? 's' : ''} to continue.
+        <p className="text-xs text-amber-600 text-center">
+          Select at least {minSources} source{minSources > 1 ? 's' : ''}
         </p>
       )}
       
       {isDynamic && sources.length === 0 && !isLoading && (
-        <p className="text-sm text-red-600">
-          No sources available. Please check your internet connection.
+        <p className="text-xs text-red-600 text-center">
+          No sources available
         </p>
       )}
     </div>

@@ -32,10 +32,9 @@ export default function Header({ onReset }: HeaderProps) {
         </div>
         
         <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-          <p className="text-sm text-yellow-800">
-            <span className="font-medium">Disclaimer:</span> Source bias ratings are 
-            for educational purposes. All articles link to original sources. 
-            This tool encourages media literacy, not political alignment.
+          <p className="text-xs text-yellow-800">
+            <span className="font-medium">Note:</span> Bias ratings are educational. 
+            Articles link to original sources.
           </p>
         </div>
       </div>
