@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { NewsSource, NewsCategory, SourceFilters } from '../types'
-import { filterSources } from '../services/unifiedSourceService'
+import { NewsSource } from '../types'
 import { getPoliticalLeanColor, getPoliticalLeanLabel } from '../utils/politicalLean'
 import { getCredibilityIndicator, getCategoryIcon } from '../utils/sourceUtils'
 
@@ -12,7 +11,6 @@ interface SourceInputProps {
   maxSources?: number
   isLoading?: boolean
   isDynamic?: boolean
-  onFiltersChange?: (filters: SourceFilters) => void
   allSourcesLoaded?: boolean
 }
 
@@ -24,13 +22,10 @@ export default function SourceInput({
   maxSources = 5,
   isLoading = false,
   isDynamic = false,
-  onFiltersChange: _onFiltersChange,
   allSourcesLoaded = true,
 }: SourceInputProps) {
   const [showDropdown, setShowDropdown] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<NewsCategory | ''>('')
-  const [showFilters, setShowFilters] = useState(false)
 
   const handleSourceToggle = (sourceId: string) => {
     const isSelected = selectedSources.includes(sourceId)
@@ -47,28 +42,18 @@ export default function SourceInput({
   }
 
 
-  // Filter sources based on search and category
+  // Filter sources based on search only (categories removed)
   const filteredSources = useMemo(() => {
-    const filters: SourceFilters = {
-      languages: [], // Languages handled at parent level
-      categories: selectedCategory ? [selectedCategory] : [],
-      countries: [],
-      search: searchTerm
-    };
-    return filterSources(sources, filters);
-  }, [sources, searchTerm, selectedCategory]);
+    if (!searchTerm.trim()) return sources;
+    return sources.filter(source => 
+      source.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      source.website.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [sources, searchTerm]);
 
   const selectedSourcesData = sources.filter(source => 
     selectedSources.includes(source.id)
   )
-
-  // Get available categories from sources
-  const availableCategories = useMemo(() => {
-    const categories = sources
-      .map(source => source.category)
-      .filter(Boolean) as NewsCategory[];
-    return [...new Set(categories)].sort();
-  }, [sources]);
 
   // Reset search when dropdown closes
   useEffect(() => {
@@ -81,75 +66,42 @@ export default function SourceInput({
     <div className="space-y-3">
       <div>
         {isDynamic && !allSourcesLoaded && (
-          <div className="text-center mb-3">
-            <p className="text-xs text-blue-600">Loading sources...</p>
-          </div>
-        )}
-        
-        {isDynamic && sources.length > 10 && (
-          <div className="text-center mb-3">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="inline-flex items-center text-xs text-gray-400 hover:text-gray-600 focus:outline-none"
-            >
-              <span className="mr-1">⚙️</span>
-              {showFilters ? 'Hide filters' : 'Filter'}
-            </button>
-          </div>
-        )}
-
-        {/* Filters */}
-        {isDynamic && showFilters && (
-          <div className="bg-gray-50 p-4 rounded-lg mb-4 space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Category Filter */}
-              <div>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value as NewsCategory | '')}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="">All Categories</option>
-                  {availableCategories.map(category => (
-                    <option key={category} value={category}>
-                      {getCategoryIcon(category)} {category.charAt(0).toUpperCase() + category.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              {/* Source Count Info */}
-              <div className="flex items-center text-sm text-gray-600">
-                <span>Showing {filteredSources.length} of {sources.length} sources</span>
-              </div>
+          <div className="text-center mb-4">
+            <div className="inline-flex items-center px-3 py-2 bg-primary-50 rounded-full">
+              <div className="animate-spin w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full mr-2"></div>
+              <span className="text-primary-700 font-medium text-sm">Loading sources...</span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Selected Sources Display */}
+      {/* Enhanced Selected Sources Display */}
       {selectedSources.length > 0 && (
-        <div className="text-center mb-3">
-          <div className="flex flex-wrap justify-center gap-2">
+        <div className="text-center mb-4">
+          <div className="flex flex-wrap justify-center gap-3">
             {selectedSourcesData.map((source) => {
               const credibility = getCredibilityIndicator(source.credibility);
               return (
                 <span
                   key={source.id}
-                  className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium border ${getPoliticalLeanColor(source.politicalLean)}`}
+                  className={`inline-flex items-center px-4 py-2 rounded-2xl text-sm font-medium border-2 transition-all duration-200 hover:scale-105 ${getPoliticalLeanColor(source.politicalLean)}`}
                 >
-                  <span className="flex items-center gap-1">
-                    {source.category && getCategoryIcon(source.category)}
-                    {source.name}
+                  <span className="flex items-center gap-2">
+                    {source.category && (
+                      <span className="text-base" title={source.category}>
+                        {getCategoryIcon(source.category)}
+                      </span>
+                    )}
+                    <span className="font-semibold">{source.name}</span>
                     {isDynamic && (
-                      <span className={`text-xs ${credibility.color}`} title={`Credibility: ${credibility.text}`}>
+                      <span className={`text-sm ${credibility.color}`} title={`Credibility: ${credibility.text}`}>
                         {credibility.emoji}
                       </span>
                     )}
                   </span>
                   <button
                     onClick={() => handleSourceToggle(source.id)}
-                    className="ml-1.5 text-sm leading-none hover:bg-black hover:bg-opacity-10 rounded-full w-4 h-4 flex items-center justify-center transition-colors"
+                    className="ml-2 text-lg leading-none hover:bg-white hover:bg-opacity-30 rounded-full w-6 h-6 flex items-center justify-center transition-all duration-200 hover:scale-110"
                     aria-label={`Remove ${source.name}`}
                   >
                     ×
@@ -161,46 +113,56 @@ export default function SourceInput({
         </div>
       )}
 
-      {/* Source Selection */}
+      {/* Enhanced Source Selection Button */}
       <div className="relative">
         <button
           onClick={() => setShowDropdown(!showDropdown)}
-          className={`w-full px-4 py-3 text-center bg-white border rounded-lg shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all ${
+          className={`w-full px-6 py-4 text-center bg-white border-2 rounded-xl shadow-soft hover:shadow-medium focus:outline-none focus:ring-4 focus:ring-primary-200 focus:border-primary-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ${
             selectedSources.length >= maxSources 
-              ? 'border-gray-300 text-gray-500' 
-              : 'border-gray-300 text-gray-700 hover:border-blue-300'
+              ? 'border-gray-200 text-gray-500' 
+              : 'border-gray-200 text-gray-700 hover:border-primary-300 hover:bg-primary-25'
           }`}
           disabled={selectedSources.length >= maxSources}
           aria-expanded={showDropdown}
           aria-haspopup="listbox"
         >
-          <span className="text-sm">
-            {selectedSources.length >= maxSources 
-              ? 'Maximum sources selected' 
-              : selectedSources.length === 0
-                ? 'Choose your news sources'
-                : 'Add more sources'}
-          </span>
+          <div className="flex items-center justify-center space-x-2">
+            <svg className="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <span className="text-base font-medium">
+              {selectedSources.length >= maxSources 
+                ? 'Maximum sources selected' 
+                : selectedSources.length === 0
+                  ? 'Select news sources'
+                  : 'Add more sources'}
+            </span>
+          </div>
           {sources.length > 0 && (
-            <span className="block text-xs text-gray-500 mt-1">
-              {!allSourcesLoaded ? 'Loading...' : `${sources.length} available`}
+            <span className="block text-sm text-gray-500 mt-2 font-normal">
+              {!allSourcesLoaded ? 'Loading additional sources...' : `${sources.length} sources available`}
             </span>
           )}
         </button>
 
         {showDropdown && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
-            {/* Search Box */}
+          <div className="absolute z-10 w-full mt-3 bg-white border border-gray-200 rounded-2xl shadow-strong">
+            {/* Enhanced Search Box */}
             {isDynamic && sources.length > 5 && (
-              <div className="p-3 border-b border-gray-200">
-                <input
-                  type="text"
-                  placeholder="Search sources..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  autoFocus
-                />
+              <div className="p-4 border-b border-gray-100">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search news sources..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-4 py-3 pl-10 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-primary-200 focus:border-primary-300 transition-all duration-200"
+                    autoFocus
+                  />
+                  <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
               </div>
             )}
             
@@ -217,7 +179,7 @@ export default function SourceInput({
               
               {filteredSources.length === 0 ? (
                 <div className="px-4 py-8 text-center text-gray-500">
-                  {searchTerm || selectedCategory ? 'No sources match your filters' : 'No sources available'}
+                  {searchTerm ? 'No sources match your search' : 'No sources available'}
                 </div>
               ) : (
                 filteredSources.map((source) => {
@@ -230,9 +192,9 @@ export default function SourceInput({
                       key={source.id}
                       onClick={() => !isDisabled && handleSourceToggle(source.id)}
                       disabled={isDisabled}
-                      className={`w-full px-4 py-3 text-left hover:bg-gray-50 focus:outline-none focus:bg-gray-50 border-b border-gray-100 last:border-b-0 ${
-                        isSelected ? 'bg-blue-50' : ''
-                      } ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      className={`w-full px-4 py-4 text-left hover:bg-gray-50 focus:outline-none focus:bg-primary-25 border-b border-gray-50 last:border-b-0 transition-all duration-200 ${
+                        isSelected ? 'bg-primary-50 border-primary-100' : ''
+                      } ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-[1.01]'}`}
                       role="option"
                       aria-selected={isSelected}
                     >

@@ -119,47 +119,58 @@ VITE_DEBUG_MODE=false  # Disable debug features
 
 ## 🎯 How It Works
 
-### Three-Step User Journey
-1. **Landing Page**: Clean, Google-inspired interface for source selection
-   - Simplified hero section without verbose explanations
-   - Streamlined source input with dynamic loading
-   - FAQ section for user education
+### Three-Phase Modal-Based User Journey ✨
+1. **Phase 1 - Landing Page** (`currentStep: 'landing'`)
+   - Google-inspired centered layout with minimal hero section
+   - Primary source selection using streamlined SourceInput component
+   - FAQ section for user education and guidance
+   - Continue button with validation (requires ≥1 source selected)
 
-2. **Topic Selection Modal**: Focused topic and filter selection
-   - Custom search prominently featured at top
-   - Collapsed advanced options (languages, countries, dates, sorting)
-   - Clear visual hierarchy and minimal instructional text
+2. **Phase 2 - Topic Selection Modal** (`currentStep: 'modal'`)
+   - **Full-screen modal interface** with backdrop and focus trapping
+   - **Enhanced accessibility**: Keyboard navigation, escape key, and proper ARIA labels
+   - Topic selection with prominent custom search capability
+   - **Integrated FilterPanel**: Languages, countries, date ranges, and sorting options
+   - Modal-specific error handling with ModalErrorBoundary
+   - "BREAK MY BUBBLE" action button to proceed to analysis
 
-3. **Results Display**: Side-by-side comparison with enhanced error handling
-   - Comprehensive error boundaries for robust user experience
+3. **Phase 3 - Results Display** (`currentStep: 'results'`)
+   - **Comprehensive error boundary system** with ResultsErrorBoundary
+   - Enhanced loading states with skeleton components
+   - Side-by-side comparison with intelligent opposing perspective algorithms
    - Enhanced articles with images, authors, and content previews
-   - Intelligent opposing perspective algorithms
+   - Navigation back to landing via header controls
 
-### Technical Architecture
+### Technical Architecture - 3-Phase Modal System
 ```
-┌─────────────────┐
-│  React App      │ ◄── Three-step flow
-│  (App.tsx)      │     (landing → modal → results)
-└─────────┬───────┘
-          │
-┌─────────▼───────┐
-│ Step Components │ ◄── Error boundaries
-│ + Error Handling│     & focus management
-└─────────┬───────┘
-          │
-    ┌─────┼─────────────┐
-    ▼     ▼             ▼
-┌─────┐ ┌──────┐ ┌──────────────┐
-│Land-│ │Topic │ │   Results    │
-│ing  │ │Modal │ │   Display    │
-└─────┘ └──────┘ └──────────────┘
-    │      │            │
-    └──────┼────────────┘
-           ▼
-    ┌─────────────────┐
-    │ NewsAPI Service │ ◄── Enhanced caching
-    │ + Filter Logic  │     & multilanguage
-    └─────────────────┘
+┌─────────────────────────────────┐
+│        React App (App.tsx)      │ ◄── AppStep state management
+│     currentStep: AppStep        │     ('landing'|'modal'|'results')
+└─────────────┬───────────────────┘
+              │
+┌─────────────▼───────────────────┐
+│      ErrorBoundary (App)        │ ◄── Top-level error protection
+└─────────────┬───────────────────┘
+              │
+        ┌─────┼─────┬─────────────┐
+        ▼     ▼     ▼             ▼
+┌─────────┐ ┌───────────────┐ ┌─────────────────┐
+│ Phase 1 │ │   Phase 2     │ │    Phase 3      │
+│Landing  │ │Topic Modal    │ │   Results       │
+│Page     │ │+ FilterPanel  │ │   Display       │
+└────┬────┘ └───────┬───────┘ └────────┬────────┘
+     │              │                  │
+     ▼              ▼                  ▼
+┌─────────┐ ┌──────────────┐ ┌─────────────────┐
+│ErrorBnd │ │ModalErrorBnd │ │ResultsErrorBnd  │
+└─────────┘ └──────────────┘ └─────────────────┘
+     │              │                  │
+     └──────────────┼──────────────────┘
+                    ▼
+           ┌─────────────────┐
+           │ Services Layer  │ ◄── NewsAPI + Caching
+           │ + Filter Logic  │     + Multilanguage
+           └─────────────────┘
 ```
 
 ## 📁 Project Structure
@@ -167,13 +178,16 @@ VITE_DEBUG_MODE=false  # Disable debug features
 ```
 break-my-bubble/
 ├── src/
-│   ├── components/         # 15+ React components
-│   │   ├── LandingPage.tsx        # New: Google-inspired landing
-│   │   ├── TopicSelectionModal.tsx # New: Streamlined modal
-│   │   ├── FAQ.tsx                # New: User education
-│   │   ├── ErrorBoundary.tsx      # Enhanced error handling
-│   │   ├── CustomSearchInput.tsx  # Free text search
-│   │   └── ResultsDisplay.tsx     # Enhanced articles
+│   ├── components/         # 15+ React components (3-Phase Architecture)
+│   │   ├── LandingPage.tsx           # ✨ NEW: Phase 1 - Google-inspired landing
+│   │   ├── TopicSelectionModal.tsx   # ✨ NEW: Phase 2 - Full-screen modal
+│   │   ├── FilterPanel.tsx           # ✨ NEW: Integrated filter interface
+│   │   ├── ModalErrorBoundary.tsx    # ✨ NEW: Modal-specific error handling
+│   │   ├── ResultsErrorBoundary.tsx  # ✨ NEW: Results error boundary
+│   │   ├── FAQ.tsx                   # ✨ NEW: User education component
+│   │   ├── ErrorBoundary.tsx         # Enhanced general error handling
+│   │   ├── CustomSearchInput.tsx     # Free text search with modal integration
+│   │   └── ResultsDisplay.tsx        # Enhanced articles with Phase 3 layout
 │   ├── services/          # 6 optimized business logic services
 │   │   ├── newsApiService.ts      # Full NewsAPI integration
 │   │   ├── filterService.ts       # Analysis algorithms
@@ -306,7 +320,14 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 *"The best way to break your news bubble is to actively seek diverse perspectives and think critically about all sources of information."*
 
-**Version 3.0** - Major UI Simplification & Three-Step Architecture  
+**Version 3.0** - 3-Phase Modal-Based UI Architecture ✨  
 **Last Updated**: July 2025
+
+**Key Changes in v3.0:**
+- Complete UI restructure with 3-phase flow ('landing' → 'modal' → 'results')
+- Full-screen modal interface for topic selection with advanced accessibility
+- Comprehensive error boundary system with phase-specific error handling
+- Google-inspired landing page design with streamlined user experience
+- Enhanced focus management and keyboard navigation throughout
 
 *Previous versions: v2.3 (API-Only Architecture), v2.1 (International Sources)*

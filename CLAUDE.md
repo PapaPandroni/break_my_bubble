@@ -32,9 +32,72 @@ npm run test:newsapi
 
 BreakMyBubble is a React + TypeScript news analysis app that helps users discover opposing perspectives by comparing their preferred news sources against others. The app uses NewsAPI.org as its data source, providing comprehensive multi-language support and advanced filtering capabilities with intelligent caching for optimal performance.
 
+### **NEW: 3-Phase UI Architecture ✨**
+
+The application now implements a streamlined 3-phase user interface flow with modal-based interactions:
+
+**Phase 1: Landing Page** (`currentStep: 'landing'`)
+- Google-inspired centered layout with hero section
+- Primary source selection interface using SourceInput component
+- FAQ section for user guidance
+- Continue button that transitions to Phase 2
+
+**Phase 2: Topic Selection Modal** (`currentStep: 'modal'`)
+- Full-screen modal overlay with backdrop
+- Topic selection using TopicSelector with custom search capability
+- Advanced filtering panel with language, country, sort, and date options
+- Modal-specific focus management and keyboard navigation
+- "BREAK MY BUBBLE" action button to proceed to results
+
+**Phase 3: Results Display** (`currentStep: 'results'`)
+- Full-screen results layout with comprehensive error boundaries
+- Loading states with skeleton components
+- Enhanced ResultsDisplay with opposing perspective analysis
+- Navigation back to landing page via header
+
+### **App State Management**
+
+The app uses a centralized `AppStep` type system:
+```typescript
+export type AppStep = 'landing' | 'modal' | 'results'
+```
+
+Step transitions are handled through dedicated navigation functions:
+- `handleContinueToModal()`: Landing → Modal
+- `handleBackToLanding()`: Modal → Landing  
+- `handleStartAnalysis()`: Modal → Results
+
+### **Enhanced Error Boundary System ✨**
+
+The 3-phase UI implements a comprehensive error boundary strategy:
+
+**App-Level Error Boundary:**
+- Wraps entire application for critical errors
+- Provides fallback UI for unrecoverable errors
+
+**Phase-Specific Error Boundaries:**
+- `ErrorBoundary` for Landing Page components
+- `ModalErrorBoundary` for Topic Selection Modal with modal-specific cleanup
+- `ResultsErrorBoundary` for Results Display with search retry capabilities
+
+**Component-Level Protection:**
+- Header component has dedicated error boundary
+- Loading states have isolated error handling
+- Debug tools wrapped in development-only error boundaries
+
+**Error Boundary Features:**
+- Automatic error reporting to console with context
+- Custom fallback UIs per boundary type
+- Modal-aware cleanup for modal errors
+- Retry functionality where appropriate
+- Graceful degradation without losing user progress
+
 ### Core Components Structure
 
-- **App.tsx**: Main application with NewsAPI integration and enhanced caching features
+- **App.tsx**: Main application with 3-phase flow control and NewsAPI integration
+- **LandingPage.tsx**: Phase 1 - Google-inspired source selection interface
+- **TopicSelectionModal.tsx**: Phase 2 - Modal-based topic and filter selection
+- **ResultsDisplay.tsx**: Phase 3 - Results presentation with error boundaries
 - **Components**: 15+ modular UI components including advanced selectors, filters, and CustomSearchInput
 - **Services**: Business logic layer with comprehensive NewsAPI integration and multilanguage filtering
 - **Data**: Static configuration for news sources, topics, and multilanguage keyword mappings
@@ -107,7 +170,13 @@ The app uses NewsAPI.org as its primary data source with comprehensive features:
 
 ### State Management
 
-Uses React hooks with enhanced AppState interface:
+Uses React hooks with enhanced AppState interface that includes 3-phase flow control:
+
+**Flow Control State:**
+- `currentStep`: Controls which phase is displayed ('landing' | 'modal' | 'results')
+- Step transition handlers with proper state cleanup
+
+**Data Selection State:**
 - Source selection (1-5 sources) with dynamic filtering
 - Multi-language selection (up to 5 languages)  
 - Multi-country filtering (up to 3 countries)
@@ -115,10 +184,19 @@ Uses React hooks with enhanced AppState interface:
 - Custom date ranges or preset timeframes
 - Topic filtering (12 predefined topics + custom search capability)
 - Custom search terms (user-defined multilanguage search)
+
+**UI State Management:**
 - Results display with enhanced article data
 - Available sources management (static + dynamic)
 - Loading states for sources and results
-- Error handling for network failures
+- Error handling for network failures with step-specific error boundaries
+- Modal state management with focus trapping and accessibility
+
+**Navigation Functions:**
+- `handleContinueToModal()`: Validates source selection and transitions to modal
+- `handleBackToLanding()`: Returns to landing page with state preservation
+- `handleStartAnalysis()`: Initiates analysis and transitions to results
+- `handleReset()`: Comprehensive state reset returning to landing page
 
 ### NewsAPI Features Implemented ✅
 

@@ -481,6 +481,24 @@ function App() {
               onContinue={handleContinueToModal}
               isLoadingSources={state.isLoadingSources}
               allSourcesLoaded={state.allSourcesLoaded}
+              selectedLanguages={state.selectedLanguages}
+              onLanguagesChange={(languages) => 
+                setState(prev => ({ ...prev, selectedLanguages: languages }))
+              }
+              selectedCountries={state.selectedCountries}
+              onCountriesChange={(countries) => 
+                setState(prev => ({ ...prev, selectedCountries: countries }))
+              }
+              availableCountries={state.availableCountries}
+              selectedSort={state.selectedSort}
+              onSortChange={(sort) => 
+                setState(prev => ({ ...prev, selectedSort: sort }))
+              }
+              selectedDateRange={state.selectedDateRange}
+              onDateRangeChange={(dateRange) => 
+                setState(prev => ({ ...prev, selectedDateRange: dateRange }))
+              }
+              timeOptions={TIME_OPTIONS}
             />
           </ErrorBoundary>
         )}

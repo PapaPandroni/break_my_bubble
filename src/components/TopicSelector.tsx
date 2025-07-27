@@ -1,122 +1,51 @@
 import { TopicKeywords } from '../types'
-import CustomSearchInput from './CustomSearchInput'
 import { CUSTOM_SEARCH_TOPIC } from '../constants'
 
 interface TopicSelectorProps {
   topics: TopicKeywords[]
   selectedTopic: string
   onTopicChange: (topic: string) => void
-  customSearchTerms?: string[]
-  onCustomSearchTermsChange?: (terms: string[]) => void
 }
 
 export default function TopicSelector({
   topics,
   selectedTopic,
   onTopicChange,
-  customSearchTerms = [],
-  onCustomSearchTermsChange = () => {},
 }: TopicSelectorProps) {
   return (
-    <div className="space-y-4">
-      {/* Main topic selection - cleaner layout */}
-      <div className="space-y-3">
-        {/* Popular topics as prominent pills */}
-        <div className="flex flex-wrap justify-center gap-2">
-          {topics.slice(0, 6).map((topic) => {
-            const isSelected = selectedTopic === topic.topic
-            
-            return (
-              <button
-                key={topic.topic}
-                onClick={() => onTopicChange(topic.topic)}
-                className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                  isSelected
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:border-blue-300 hover:bg-blue-50 shadow-sm hover:shadow-md'
-                }`}
-                aria-pressed={isSelected}
-                title={`Keywords: ${topic.keywords.slice(0, 3).join(', ')}${topic.keywords.length > 3 ? ` +${topic.keywords.length - 3} more` : ''}`}
-              >
-                {topic.topic}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Custom Search Option - Prominent */}
-        <div className="flex justify-center mb-3">
-          <button
-            onClick={() => onTopicChange(CUSTOM_SEARCH_TOPIC)}
-            className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
-              selectedTopic === CUSTOM_SEARCH_TOPIC
-                ? 'bg-purple-600 text-white shadow-lg transform scale-105'
-                : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 hover:shadow-md'
-            }`}
-            aria-pressed={selectedTopic === CUSTOM_SEARCH_TOPIC}
-            title="Search anything you want"
-          >
-            <span className="mr-2">🔍</span>
-            {CUSTOM_SEARCH_TOPIC}
-          </button>
-        </div>
-
-        {/* More topics */}
-        <div className="flex flex-wrap justify-center gap-2">
-          {topics.slice(6).map((topic) => {
-            const isSelected = selectedTopic === topic.topic
-            
-            return (
-              <button
-                key={topic.topic}
-                onClick={() => onTopicChange(topic.topic)}
-                className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                  isSelected
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-700'
-                }`}
-                aria-pressed={isSelected}
-                title={`Keywords: ${topic.keywords.slice(0, 3).join(', ')}${topic.keywords.length > 3 ? ` +${topic.keywords.length - 3} more` : ''}`}
-              >
-                {topic.topic}
-              </button>
-            )
-          })}
-        </div>
+    <div className="space-y-6">
+      {/* All Topics Grid - More Streamlined */}
+      <div className="flex flex-wrap justify-center gap-3">
+        {topics.map((topic) => {
+          const isSelected = selectedTopic === topic.topic
+          
+          return (
+            <button
+              key={topic.topic}
+              onClick={() => onTopicChange(topic.topic)}
+              className={`px-6 py-3 rounded-2xl text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 focus:ring-offset-2 transform hover:scale-105 ${
+                isSelected
+                  ? 'bg-primary-600 text-white shadow-medium'
+                  : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-25 shadow-soft hover:shadow-medium'
+              }`}
+              aria-pressed={isSelected}
+              title={`Keywords: ${topic.keywords.slice(0, 3).join(', ')}${topic.keywords.length > 3 ? ` +${topic.keywords.length - 3} more` : ''}`}
+            >
+              {topic.topic}
+            </button>
+          )
+        })}
       </div>
 
-      {/* Custom Search Input */}
-      {selectedTopic === CUSTOM_SEARCH_TOPIC && (
-        <div className="max-w-md mx-auto">
-          <CustomSearchInput
-            searchTerms={customSearchTerms}
-            onSearchTermsChange={onCustomSearchTermsChange}
-            placeholder="artificial intelligence, climate policy..."
-          />
-        </div>
-      )}
-
-      {/* Selected topic feedback - minimal */}
+      {/* Selected topic feedback - enhanced */}
       {selectedTopic && selectedTopic !== CUSTOM_SEARCH_TOPIC && (
         <div className="text-center">
-          <div className="inline-flex items-center px-3 py-1 bg-blue-50 rounded-full">
-            <span className="text-xs text-blue-600">
+          <div className="inline-flex items-center px-4 py-2 bg-primary-50 rounded-xl border border-primary-200 shadow-soft">
+            <span className="text-sm text-primary-700 font-medium">
               {(() => {
                 const topic = topics.find(t => t.topic === selectedTopic)
-                return topic ? `${topic.keywords.slice(0, 3).join(' • ')}${topic.keywords.length > 3 ? '...' : ''}` : ''
+                return topic ? `Keywords: ${topic.keywords.slice(0, 4).join(' • ')}${topic.keywords.length > 4 ? '...' : ''}` : ''
               })()}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Custom search feedback - minimal */}
-      {selectedTopic === CUSTOM_SEARCH_TOPIC && customSearchTerms.length > 0 && (
-        <div className="text-center">
-          <div className="inline-flex items-center px-3 py-1 bg-purple-50 rounded-full">
-            <span className="text-xs text-purple-600">
-              {customSearchTerms.slice(0, 3).join(' • ')}
-              {customSearchTerms.length > 3 ? `... +${customSearchTerms.length - 3}` : ''}
             </span>
           </div>
         </div>

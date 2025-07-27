@@ -2,23 +2,44 @@
 export type PoliticalLean = 'left' | 'lean-left' | 'center' | 'lean-right' | 'right' | 'unknown'
 
 /**
- * Returns the CSS classes for styling political lean badges
+ * Returns the CSS classes for styling political lean badges with enhanced differentiation
  */
 export const getPoliticalLeanColor = (lean: PoliticalLean): string => {
   switch (lean) {
     case 'left':
-      return 'bg-blue-200 text-blue-800 border-blue-400'
+      return 'bg-strong-left-100 text-strong-left-800 border-strong-left-300 shadow-soft'
     case 'lean-left':
-      return 'bg-blue-100 text-blue-700 border-blue-300'
+      return 'bg-lean-left-100 text-lean-left-700 border-lean-left-300 shadow-soft'
     case 'center':
-      return 'bg-gray-100 text-gray-700 border-gray-300'
+      return 'bg-center-100 text-center-700 border-center-400 shadow-soft'
     case 'lean-right':
-      return 'bg-red-100 text-red-700 border-red-300'
+      return 'bg-lean-right-100 text-lean-right-700 border-lean-right-300 shadow-soft'
     case 'right':
-      return 'bg-red-200 text-red-800 border-red-400'
+      return 'bg-strong-right-100 text-strong-right-800 border-strong-right-300 shadow-soft'
     case 'unknown':
     default:
-      return 'bg-amber-100 text-amber-700 border-amber-300'
+      return 'bg-unknown-100 text-unknown-700 border-unknown-400 shadow-soft'
+  }
+}
+
+/**
+ * Returns enhanced background styles for article cards based on political lean
+ */
+export const getPoliticalLeanCardStyle = (lean: PoliticalLean): string => {
+  switch (lean) {
+    case 'left':
+      return 'border-l-4 border-strong-left-500 bg-gradient-to-r from-strong-left-25 to-white'
+    case 'lean-left':
+      return 'border-l-4 border-lean-left-400 bg-gradient-to-r from-lean-left-25 to-white'
+    case 'center':
+      return 'border-l-4 border-center-400 bg-gradient-to-r from-center-25 to-white'
+    case 'lean-right':
+      return 'border-l-4 border-lean-right-400 bg-gradient-to-r from-lean-right-25 to-white'
+    case 'right':
+      return 'border-l-4 border-strong-right-500 bg-gradient-to-r from-strong-right-25 to-white'
+    case 'unknown':
+    default:
+      return 'border-l-4 border-unknown-400 bg-gradient-to-r from-unknown-25 to-white'
   }
 }
 

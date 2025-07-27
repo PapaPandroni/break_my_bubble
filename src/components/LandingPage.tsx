@@ -1,6 +1,8 @@
 import { useMemo, useCallback } from 'react'
-import { NewsSource } from '../types'
+import { NewsSource, NewsLanguage, NewsSortBy } from '../types'
+import { DateRange } from './DateRangePicker'
 import SourceInput from './SourceInput'
+import FilterPanel from './FilterPanel'
 import FAQ from './FAQ'
 
 interface LandingPageProps {
@@ -10,6 +12,17 @@ interface LandingPageProps {
   onContinue: () => void
   isLoadingSources: boolean
   allSourcesLoaded: boolean
+  // Filter props
+  selectedLanguages: NewsLanguage[]
+  onLanguagesChange: (languages: NewsLanguage[]) => void
+  selectedCountries: string[]
+  onCountriesChange: (countries: string[]) => void
+  availableCountries: string[]
+  selectedSort: NewsSortBy
+  onSortChange: (sort: NewsSortBy) => void
+  selectedDateRange: DateRange
+  onDateRangeChange: (dateRange: DateRange) => void
+  timeOptions: { value: number; label: string; days: number }[]
 }
 
 export default function LandingPage({
@@ -18,7 +31,17 @@ export default function LandingPage({
   onSourcesChange,
   onContinue,
   isLoadingSources,
-  allSourcesLoaded
+  allSourcesLoaded,
+  selectedLanguages,
+  onLanguagesChange,
+  selectedCountries,
+  onCountriesChange,
+  availableCountries,
+  selectedSort,
+  onSortChange,
+  selectedDateRange,
+  onDateRangeChange,
+  timeOptions
 }: LandingPageProps) {
   // Memoize expensive calculation
   const canContinue = useMemo(() => {
@@ -37,65 +60,90 @@ export default function LandingPage({
   }, [onSourcesChange])
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
       <main className="max-w-4xl mx-auto px-4">
         <div className="min-h-[80vh] flex flex-col justify-center">
-          {/* Google-inspired centered layout */}
-          <div className="max-w-2xl mx-auto w-full space-y-12">
-            
-            {/* Hero Section */}
-            <div className="text-center space-y-6">
+          {/* Simplified Layout with Better Spacing */}
+          <div className="max-w-3xl mx-auto w-full space-y-8">
+            {/* Main Content */}
+            <div className="text-center space-y-8">
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-5xl font-light text-gray-900">
-                  BreakMyBubble
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
+                  Choose your news sources
                 </h1>
-                <h2 className="text-xl md:text-2xl font-normal text-gray-700">
-                  Discover opposing perspectives
-                </h2>
+                <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-medium">
+                  Select the news outlets you trust, and we'll show you how other sources cover the same stories
+                </p>
               </div>
-            </div>
 
-            {/* Source Selection - Primary Focus */}
-            <div className="space-y-6">
-
-              <div className="max-w-lg mx-auto">
-                <SourceInput
-                  sources={sources}
-                  selectedSources={selectedSources}
-                  onSourcesChange={handleSourcesChange}
-                  isLoading={isLoadingSources}
-                  isDynamic={true}
-                  allSourcesLoaded={allSourcesLoaded}
-                  maxSources={5}
-                />
+              {/* Source Selection Card - Color/Shape Focus */}
+              <div className="max-w-2xl mx-auto">
+                <div className="relative">
+                  {/* Main selection card with colored border and background */}
+                  <div className="relative bg-primary-25 rounded-2xl shadow-medium border-2 border-primary-300 p-6 transition-all duration-300 hover:shadow-strong hover:border-primary-400">
+                    <div className="space-y-4">
+                      <div className="text-center space-y-2">
+                        <div className="inline-flex items-center px-3 py-1.5 bg-primary-200 rounded-full">
+                          <span className="w-2 h-2 bg-primary-600 rounded-full mr-2"></span>
+                          <span className="text-primary-800 font-medium text-sm">Step 1</span>
+                        </div>
+                        <h2 className="text-lg font-semibold text-gray-900">
+                          Select News Sources
+                        </h2>
+                      </div>
+                      
+                      <SourceInput
+                        sources={sources}
+                        selectedSources={selectedSources}
+                        onSourcesChange={handleSourcesChange}
+                        isLoading={isLoadingSources}
+                        isDynamic={true}
+                        allSourcesLoaded={allSourcesLoaded}
+                        maxSources={5}
+                      />
+                      
+                      {/* Filter Panel - beneath source selection as requested */}
+                      <div className="pt-6 border-t border-gray-100 mt-6">
+                        <FilterPanel
+                          selectedLanguages={selectedLanguages}
+                          onLanguagesChange={onLanguagesChange}
+                          selectedCountries={selectedCountries}
+                          onCountriesChange={onCountriesChange}
+                          availableCountries={availableCountries}
+                          selectedSort={selectedSort}
+                          onSortChange={onSortChange}
+                          selectedDateRange={selectedDateRange}
+                          onDateRangeChange={onDateRangeChange}
+                          timeOptions={timeOptions}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Continue Button */}
-            <div className="text-center space-y-4">
+            <div className="text-center">
               <button
                 onClick={handleContinue}
                 disabled={!canContinue}
-                className={`px-8 py-4 text-lg font-medium rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                className={`px-8 py-3 text-lg font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 focus:ring-offset-2 ${
                   canContinue
-                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    ? 'bg-gradient-to-r from-primary-600 to-secondary-600 text-white hover:from-primary-700 hover:to-secondary-700 shadow-medium hover:shadow-strong'
+                    : 'bg-gray-200 text-gray-500 cursor-not-allowed shadow-soft'
                 }`}
                 aria-label="Continue to topic selection"
               >
-                Continue
+                {canContinue ? 'Continue to Topics →' : 'Select a source to continue'}
               </button>
-              
-              {!canContinue && (
-                <p className="text-sm text-gray-500">
-                  Select a news source to continue
-                </p>
-              )}
             </div>
 
             {/* FAQ Section */}
-            <div className="border-t border-gray-200 pt-8">
-              <FAQ className="max-w-lg mx-auto" />
+            <div className="border-t border-gray-100 pt-8">
+              <div className="bg-white rounded-xl shadow-soft border border-gray-50 p-6">
+                <FAQ className="max-w-2xl mx-auto" />
+              </div>
             </div>
 
             {/* Bottom spacing for mobile */}

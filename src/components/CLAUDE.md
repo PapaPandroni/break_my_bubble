@@ -12,21 +12,37 @@ The components are organized as functional components using React hooks for stat
 - **Accessibility**: ARIA labels, keyboard navigation, and screen reader support
 - **Responsive**: Mobile-first design with responsive breakpoints
 
-## Component Hierarchy
+## Component Hierarchy - 3-Phase UI Architecture ✨
+
+The application now implements a 3-phase user interface with modal-based interactions:
 
 ```
-App.tsx
-├── Header.tsx
-├── SourceInput.tsx
-├── LanguageSelector.tsx (NewsAPI mode)
-├── CountrySelector.tsx (NewsAPI mode)
-├── SortSelector.tsx (NewsAPI mode)
-├── TopicSelector.tsx
-├── TimeSlider.tsx (RSS mode)
-├── DateRangePicker.tsx (NewsAPI mode)
-├── LoadingState.tsx / ResultsLoadingSkeleton
-├── ErrorMessage.tsx / NetworkErrorMessage
-└── ResultsDisplay.tsx
+App.tsx (3-Phase Flow Control)
+├── ErrorBoundary (App-level protection)
+│   ├── Header.tsx (Phase navigation)
+│   │
+│   ├── Phase 1: Landing Page (currentStep: 'landing')
+│   │   └── ErrorBoundary
+│   │       └── LandingPage.tsx
+│   │           ├── SourceInput.tsx
+│   │           └── FAQ.tsx
+│   │
+│   ├── Phase 2: Topic Selection Modal (currentStep: 'modal')
+│   │   └── ModalErrorBoundary
+│   │       └── TopicSelectionModal.tsx
+│   │           ├── TopicSelector.tsx
+│   │           │   └── CustomSearchInput.tsx
+│   │           └── FilterPanel.tsx
+│   │               ├── LanguageSelector.tsx
+│   │               ├── CountrySelector.tsx
+│   │               ├── SortSelector.tsx
+│   │               └── DateRangePicker.tsx
+│   │
+│   └── Phase 3: Results Display (currentStep: 'results')
+│       ├── LoadingState.tsx / ResultsLoadingSkeleton
+│       ├── ErrorMessage.tsx / NetworkErrorMessage
+│       └── ResultsErrorBoundary
+│           └── ResultsDisplay.tsx
 ```
 
 ## Components Overview
@@ -35,8 +51,55 @@ App.tsx
 
 #### **Header.tsx**
 - Application header with title and branding
+- **NEW**: Phase-aware navigation with conditional reset/back functionality
 - Responsive design with mobile considerations
-- Displays application mode (RSS vs NewsAPI)
+- Dynamic button display based on current phase
+- Title click navigation back to landing page
+
+#### **LandingPage.tsx** ✨ *NEW: Phase 1 Component*
+- Google-inspired centered layout with hero section
+- Primary interface for Phase 1 of the user flow
+- **Features**:
+  - Clean, minimal design focusing on source selection
+  - SourceInput integration for news source selection
+  - FAQ section for user guidance
+  - Continue button with validation (requires ≥1 source)
+  - Responsive design with mobile-optimized spacing
+
+#### **TopicSelectionModal.tsx** ✨ *NEW: Phase 2 Component*
+- Full-screen modal interface for Phase 2
+- **Advanced Modal Features**:
+  - Backdrop click to close with proper event handling
+  - Focus trapping and keyboard navigation (Tab/Shift+Tab)
+  - Escape key to close modal
+  - Automatic focus management on open/close
+  - Body scroll prevention when modal is open
+  - **Accessibility**: Full ARIA support with proper labels
+- **Content Sections**:
+  - Topic selection with TopicSelector integration
+  - Advanced filtering panel with all NewsAPI options
+  - Action footer with validation and loading states
+- **Responsive Design**: Mobile-optimized modal sizing and scrolling
+
+### **NEW: Error Boundary Components** ✨
+
+#### **ErrorBoundary.tsx**
+- General-purpose error boundary for components
+- Configurable fallback UI and error reporting
+- Optional reload functionality
+- Proper error context logging
+
+#### **ModalErrorBoundary.tsx** 
+- Specialized error boundary for modal components
+- Modal-specific cleanup on error (focus restoration, body scroll reset)
+- Custom modal error UI with close functionality
+- Proper modal lifecycle management during errors
+
+#### **ResultsErrorBoundary.tsx**
+- Results-specific error boundary with search context
+- Retry functionality for failed searches
+- Reset capability to return to landing page
+- Search context preservation for debugging
 
 #### **ResultsDisplay.tsx**
 - Main results presentation component
@@ -66,10 +129,22 @@ App.tsx
 - Integration with CustomSearchInput for user-defined search terms
 - Dynamic display of active search terms with counts
 
-#### **CustomSearchInput.tsx** ✨ *New Component*
+#### **FilterPanel.tsx** ✨ *NEW: Modal Filter Component*
+- Comprehensive filtering interface for the Topic Selection Modal
+- **Organized Layout**: All NewsAPI filter options in a cohesive panel
+- **Components Integration**:
+  - LanguageSelector for multilanguage support
+  - CountrySelector for geographic filtering  
+  - SortSelector for result ordering preferences
+  - DateRangePicker for temporal filtering
+- **Responsive Design**: Mobile-optimized layout within modal context
+- **State Management**: Centralized filter state through modal component
+
+#### **CustomSearchInput.tsx** ✨ *Enhanced Integration*
 - **Free text search input** with comprehensive multilanguage support
 - **Real-time parsing**: Comma and space-separated terms with instant validation
 - **Visual term management**: Individual removable chips for each search term
+- **Modal Integration**: Optimized for use within TopicSelectionModal
 - **User experience features**:
   - Auto-clear functionality (Escape key)
   - Term count display with warnings
