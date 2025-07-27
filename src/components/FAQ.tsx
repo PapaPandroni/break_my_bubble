@@ -12,7 +12,7 @@ const faqData: FAQItem[] = [
   },
   {
     question: "Where do sources come from?",
-    answer: "Our news sources are powered by NewsAPI.org, which provides access to over 80,000 news sources worldwide. We've enhanced this with our own political bias classifications to ensure you see genuinely opposing perspectives."
+    answer: "Our news sources are powered by NewsAPI.org. We've carefully curated and classified over 130 high-quality news sources with political bias ratings to ensure you see genuinely opposing perspectives from credible outlets worldwide."
   },
   {
     question: "How is political bias determined?",

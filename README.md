@@ -1,8 +1,17 @@
 # BreakMyBubble 🎯
 
-A sophisticated news analysis web application with a streamlined three-step interface that helps users discover opposing perspectives. Built on a "show, don't tell" design philosophy, the app features dramatic UI simplification while maintaining comprehensive NewsAPI integration and multilanguage support.
+A sophisticated news analysis web application with a streamlined three-step interface that helps users discover opposing perspectives. Built on a "show, don't tell" design philosophy, the app features refined UI/UX with enhanced consistency while maintaining comprehensive NewsAPI integration and multilanguage support.
 
-![BreakMyBubble](https://img.shields.io/badge/Status-Production%20Ready-green) ![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue) ![NewsAPI](https://img.shields.io/badge/NewsAPI-Integrated-orange)
+![BreakMyBubble](https://img.shields.io/badge/Version-2.4-blue) ![BreakMyBubble](https://img.shields.io/badge/Status-Production%20Ready-green) ![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue) ![NewsAPI](https://img.shields.io/badge/NewsAPI-Integrated-orange)
+
+## 🎨 Latest Updates (v2.4)
+
+### UI/UX Enhancements
+- **Header Consistency**: Integrated "Discover opposing perspectives" subtitle directly in header for unified branding
+- **Refined Landing Page**: Improved visual hierarchy with optimized typography and spacing
+- **Enhanced Source Selection**: Color/shape emphasis (primary blue borders and backgrounds) instead of oversized elements
+- **Content Accuracy**: Updated FAQ from misleading "80,000+ sources" to honest "130+ curated sources"
+- **Streamlined Interface**: Removed duplicate elements and fixed modal organization issues
 
 ## 🌟 Key Features
 
@@ -82,7 +91,7 @@ Access at `http://localhost:5173` - Works immediately with RSS feeds!
 1. **Get NewsAPI Key**: Free at [newsapi.org/register](https://newsapi.org/register)
 2. **Configure Environment**:
    ```bash
-   # Create .env file
+   # Create .env file (ENSURE IT'S IN .gitignore!)
    echo "VITE_USE_NEWS_API=true" >> .env
    echo "VITE_NEWS_API_KEY=your_api_key_here" >> .env
    ```
@@ -91,6 +100,12 @@ Access at `http://localhost:5173` - Works immediately with RSS feeds!
    npm install
    npm run dev
    ```
+
+**⚠️ SECURITY WARNING**: 
+- **NEVER commit your `.env` file to version control**
+- API keys in client-side applications are visible to users
+- For production use, consider implementing a backend proxy to hide API keys
+- The current implementation includes input sanitization and URL validation for security
 4. **Enjoy Full Features**: Multi-language, 54 countries, advanced filtering!
 
 ## 🏗️ Production Deployment

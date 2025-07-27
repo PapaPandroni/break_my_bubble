@@ -69,13 +69,110 @@ export const truncateText = (text: string, maxLength: number): string => {
   return text.slice(0, maxLength - 3) + '...'
 }
 
+import DOMPurify from 'dompurify'
+
 export const normalizeKeyword = (keyword: string): string => {
   return keyword.toLowerCase().trim()
 }
 
 export const extractTextFromHTML = (html: string): string => {
-  // Simple HTML tag removal - in production, consider using DOMParser
-  return html.replace(/<[^>]*>/g, '').trim()
+  // Use DOMPurify for secure HTML sanitization
+  const sanitized = DOMPurify.sanitize(html, { 
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: [],
+    KEEP_CONTENT: true
+  })
+  return sanitized.trim()
+}
+
+export const sanitizeHTML = (html: string): string => {
+  // For cases where we want to keep some safe HTML tags
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u'],
+    ALLOWED_ATTR: [],
+    KEEP_CONTENT: true
+  })
+}
+
+// URL validation and sanitization
+export const validateURL = (url: string): boolean => {
+  try {
+    const parsed = new URL(url)
+    return ['http:', 'https:'].includes(parsed.protocol)
+  } catch {
+    return false
+  }
+}
+
+export const sanitizeURL = (url: string): string | null => {
+  if (!validateURL(url)) {
+    return null
+  }
+  try {
+    const parsed = new URL(url)
+    // Remove potentially dangerous parameters
+    parsed.searchParams.delete('javascript')
+    parsed.searchParams.delete('data')
+    return parsed.href
+  } catch {
+    return null
+  }
+}
+
+// Trusted domains for images (can be expanded)
+const TRUSTED_IMAGE_DOMAINS = [
+  'images.unsplash.com',
+  'cdn.pixabay.com',
+  'images.pexels.com',
+  // News sources
+  'cdn.cnn.com',
+  'static01.nyt.com',
+  'www.reuters.com',
+  'ichef.bbci.co.uk',
+  'img.huffingtonpost.com'
+]
+
+export const isValidImageURL = (url: string): boolean => {
+  if (!validateURL(url)) return false
+  
+  try {
+    const parsed = new URL(url)
+    // Allow any HTTPS image from news sources for now
+    // In production, consider implementing a more restrictive whitelist
+    return parsed.protocol === 'https:' && 
+           (TRUSTED_IMAGE_DOMAINS.some(domain => parsed.hostname.includes(domain)) ||
+            parsed.hostname.includes('news') ||
+            parsed.hostname.includes('media'))
+  } catch {
+    return false
+  }
+}
+
+// Input validation for search terms
+export const validateSearchTerm = (term: string): boolean => {
+  if (!term || typeof term !== 'string') return false
+  
+  const trimmed = term.trim()
+  if (trimmed.length === 0 || trimmed.length > 100) return false
+  
+  // Check for potential script injection patterns
+  const dangerousPatterns = [
+    /<script/i,
+    /javascript:/i,
+    /data:/i,
+    /vbscript:/i,
+    /on\w+\s*=/i
+  ]
+  
+  return !dangerousPatterns.some(pattern => pattern.test(trimmed))
+}
+
+export const sanitizeSearchTerms = (terms: string[]): string[] => {
+  return terms
+    .filter(term => validateSearchTerm(term))
+    .map(term => term.trim().toLowerCase())
+    .filter(term => term.length > 0)
+    .slice(0, 10) // Limit to 10 terms max
 }
 
 export const shuffleArray = <T>(array: T[]): T[] => {

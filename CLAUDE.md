@@ -23,23 +23,52 @@ npm run test:newsapi
 
 ## Project Status
 
-**Version**: 2.3 - API-Only Architecture with Enhanced Caching ✅  
+**Version**: 2.4 - Enhanced UI/UX with Refined Landing Page ✅  
 **Last Updated**: July 2025  
 **Build Status**: ✅ Production Ready  
-**Features**: NewsAPI-powered architecture with 12-24 hour smart caching, comprehensive multilanguage search (14 languages), and free text search functionality
+**Features**: NewsAPI-powered architecture with 12-24 hour smart caching, comprehensive multilanguage search (14 languages), free text search functionality, and refined UI with improved header consistency and landing page experience
 
 ## Architecture Overview
 
 BreakMyBubble is a React + TypeScript news analysis app that helps users discover opposing perspectives by comparing their preferred news sources against others. The app uses NewsAPI.org as its data source, providing comprehensive multi-language support and advanced filtering capabilities with intelligent caching for optimal performance.
+
+### **Recent UI/UX Enhancements (v2.4)** ✨
+
+The application now features a significantly improved user interface with enhanced consistency and user experience:
+
+**Header Enhancement:**
+- Integrated subtitle "Discover opposing perspectives" directly in header for consistent branding
+- Unified branding message across all application phases
+- Improved header visual hierarchy and spacing
+
+**Landing Page Refinements:**
+- Removed duplicate title/subtitle elements for cleaner, focused design
+- Refined typography sizing from oversized (text-5xl) to appropriate proportions (h2)
+- Optimized spacing throughout (reduced excessive space-y-16 to balanced space-y-8)
+- Enhanced source selection card with color/shape emphasis instead of size:
+  - Primary blue border (border-primary-300) for clear visual distinction
+  - Light primary background (bg-primary-25) for subtle emphasis
+  - Proper proportional padding and refined hover effects
+- Successfully integrated filter panel below main selection for improved workflow
+
+**Modal Improvements:**
+- Fixed duplicate "Advanced options" sections in TopicSelectionModal
+- Streamlined modal interface for better user focus
+
+**Content Accuracy:**
+- Updated FAQ from misleading "over 80,000 sources" to accurate "over 130 high-quality news sources"
+- Emphasized curation and quality over inflated quantity claims
+- Better reflects actual user experience and value proposition
 
 ### **NEW: 3-Phase UI Architecture ✨**
 
 The application now implements a streamlined 3-phase user interface flow with modal-based interactions:
 
 **Phase 1: Landing Page** (`currentStep: 'landing'`)
-- Google-inspired centered layout with hero section
-- Primary source selection interface using SourceInput component
-- FAQ section for user guidance
+- Google-inspired centered layout with refined visual hierarchy
+- Enhanced source selection with color/shape emphasis (primary blue border and background)
+- Integrated filter panel positioned below source selection for improved workflow
+- FAQ section with accurate content (130+ curated sources vs previous inflated claims)
 - Continue button that transitions to Phase 2
 
 **Phase 2: Topic Selection Modal** (`currentStep: 'modal'`)
@@ -95,9 +124,11 @@ The 3-phase UI implements a comprehensive error boundary strategy:
 ### Core Components Structure
 
 - **App.tsx**: Main application with 3-phase flow control and NewsAPI integration
-- **LandingPage.tsx**: Phase 1 - Google-inspired source selection interface
-- **TopicSelectionModal.tsx**: Phase 2 - Modal-based topic and filter selection
+- **Header.tsx**: Enhanced with integrated "Discover opposing perspectives" subtitle for consistent branding
+- **LandingPage.tsx**: Phase 1 - Refined Google-inspired interface with improved spacing and visual emphasis
+- **TopicSelectionModal.tsx**: Phase 2 - Streamlined modal-based topic and filter selection
 - **ResultsDisplay.tsx**: Phase 3 - Results presentation with error boundaries
+- **FAQ.tsx**: Updated with accurate content emphasizing quality over quantity (130+ curated sources)
 - **Components**: 15+ modular UI components including advanced selectors, filters, and CustomSearchInput
 - **Services**: Business logic layer with comprehensive NewsAPI integration and multilanguage filtering
 - **Data**: Static configuration for news sources, topics, and multilanguage keyword mappings

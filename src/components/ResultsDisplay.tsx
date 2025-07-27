@@ -1,5 +1,5 @@
 import { Article } from '../types'
-import { truncateText } from '../utils/helpers'
+import { truncateText, sanitizeURL, isValidImageURL, extractTextFromHTML } from '../utils/helpers'
 import { formatRelativeTime } from '../utils/dateUtils'
 import { getPoliticalLeanColor, getPoliticalLeanLabel, getPoliticalLeanCardStyle } from '../utils/politicalLean'
 
@@ -17,13 +17,15 @@ interface ArticleCardProps {
 function ArticleCard({ article }: ArticleCardProps) {
   return (
     <article className={`border border-gray-100 rounded-2xl overflow-hidden hover:shadow-strong transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 ${getPoliticalLeanCardStyle(article.sourceLean)}`}>
-      {/* Enhanced Article Image */}
-      {article.imageUrl && (
+      {/* Secure Article Image */}
+      {article.imageUrl && isValidImageURL(article.imageUrl) && (
         <div className="aspect-w-16 aspect-h-9 relative overflow-hidden">
           <img
-            src={article.imageUrl}
-            alt={article.title}
+            src={sanitizeURL(article.imageUrl) || '/placeholder-image.jpg'}
+            alt={extractTextFromHTML(article.title)}
             className="w-full h-48 object-cover transition-transform duration-300 hover:scale-105"
+            loading="lazy"
+            decoding="async"
             onError={(e) => {
               // Hide image if it fails to load
               e.currentTarget.style.display = 'none';
@@ -58,12 +60,12 @@ function ArticleCard({ article }: ArticleCardProps) {
         <div className="space-y-4">
           <h3 className="text-xl font-bold text-gray-900 leading-tight">
             <a
-              href={article.link}
+              href={sanitizeURL(article.link) || '#'}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-primary-600 transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-primary-200 focus:ring-offset-2 rounded-lg"
             >
-              {article.title}
+              {extractTextFromHTML(article.title)}
             </a>
           </h3>
 
@@ -95,7 +97,7 @@ function ArticleCard({ article }: ArticleCardProps) {
 
           <div className="flex items-center justify-between pt-4 border-t border-gray-100">
             <a
-              href={article.link}
+              href={sanitizeURL(article.link) || '#'}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center text-sm font-semibold text-primary-600 hover:text-primary-700 focus:outline-none focus:ring-4 focus:ring-primary-200 focus:ring-offset-2 rounded-lg px-3 py-2 hover:bg-primary-25 transition-all duration-200"

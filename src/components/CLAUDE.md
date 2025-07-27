@@ -49,25 +49,34 @@ App.tsx (3-Phase Flow Control)
 
 ### Core Layout Components
 
-#### **Header.tsx**
-- Application header with title and branding
+#### **Header.tsx** ✨ *Enhanced v2.4*
+- Application header with integrated branding and subtitle
+- **Enhanced Branding**: "Discover opposing perspectives" subtitle now directly in header for consistency
 - **NEW**: Phase-aware navigation with conditional reset/back functionality
+- Unified branding message across all application phases
 - Responsive design with mobile considerations
 - Dynamic button display based on current phase
 - Title click navigation back to landing page
+- Improved visual hierarchy and spacing
 
-#### **LandingPage.tsx** ✨ *NEW: Phase 1 Component*
-- Google-inspired centered layout with hero section
-- Primary interface for Phase 1 of the user flow
-- **Features**:
-  - Clean, minimal design focusing on source selection
-  - SourceInput integration for news source selection
-  - FAQ section for user guidance
+#### **LandingPage.tsx** ✨ *Enhanced v2.4: Refined UI/UX*
+- Google-inspired centered layout with refined visual hierarchy
+- Primary interface for Phase 1 of the user flow with improved user experience
+- **Enhanced Features**:
+  - Clean, minimal design with optimized proportions (removed oversized typography)
+  - Improved spacing throughout (balanced space-y-8 instead of excessive space-y-16)
+  - **Source Selection Enhancement**: Color/shape emphasis instead of size:
+    - Primary blue border (border-primary-300) for clear visual distinction
+    - Light primary background (bg-primary-25) for subtle emphasis
+    - Proper proportional padding and refined hover effects
+  - **Integrated Filter Panel**: Successfully moved below source selection for improved workflow
+  - **Streamlined Content**: Removed duplicate titles and subtitles for focused design
+  - FAQ section with updated, accurate content
   - Continue button with validation (requires ≥1 source)
   - Responsive design with mobile-optimized spacing
 
-#### **TopicSelectionModal.tsx** ✨ *NEW: Phase 2 Component*
-- Full-screen modal interface for Phase 2
+#### **TopicSelectionModal.tsx** ✨ *Enhanced v2.4: Streamlined Interface*
+- Full-screen modal interface for Phase 2 with improved organization
 - **Advanced Modal Features**:
   - Backdrop click to close with proper event handling
   - Focus trapping and keyboard navigation (Tab/Shift+Tab)
@@ -75,11 +84,23 @@ App.tsx (3-Phase Flow Control)
   - Automatic focus management on open/close
   - Body scroll prevention when modal is open
   - **Accessibility**: Full ARIA support with proper labels
-- **Content Sections**:
+- **Streamlined Content Sections**:
   - Topic selection with TopicSelector integration
+  - **Fixed**: Removed duplicate "Advanced options" sections for cleaner interface
   - Advanced filtering panel with all NewsAPI options
   - Action footer with validation and loading states
 - **Responsive Design**: Mobile-optimized modal sizing and scrolling
+
+#### **FAQ.tsx** ✨ *Enhanced v2.4: Content Accuracy*
+- Frequently asked questions component with improved accuracy
+- **Content Enhancement**: Updated source count from misleading "over 80,000" to accurate "over 130 high-quality news sources"
+- **Quality Emphasis**: Now emphasizes curation and quality over inflated quantity claims
+- **Better User Expectations**: More accurately reflects the actual user experience and value proposition
+- **Features**:
+  - Expandable/collapsible FAQ items with smooth animations
+  - Clean, accessible design with proper ARIA support
+  - Mobile-optimized layout and typography
+  - Integrated seamlessly into landing page design
 
 ### **NEW: Error Boundary Components** ✨
 
@@ -122,12 +143,13 @@ App.tsx (3-Phase Flow Control)
 - Visual feedback for selected sources
 - Responsive grid layout
 
-#### **TopicSelector.tsx**
+#### **TopicSelector.tsx** ✨ *Enhanced v2.4*
 - Twelve predefined topics with multilanguage support
 - **Enhanced with Custom Search**: Purple-styled "Custom Search" option for free text search
 - Clear visual selection with keyword previews
 - Integration with CustomSearchInput for user-defined search terms
 - Dynamic display of active search terms with counts
+- **v2.4 Enhancement**: Improved modal integration with streamlined interface
 
 #### **FilterPanel.tsx** ✨ *NEW: Modal Filter Component*
 - Comprehensive filtering interface for the Topic Selection Modal
@@ -207,10 +229,24 @@ These components are only visible/functional when `VITE_USE_NEWS_API=true`:
 - Retry functionality where applicable
 - Consistent error styling and UX
 
+## **UI/UX Enhancement Notes (v2.4)** ✨
+
+### **Design Philosophy Updates**
+- **Consistency Over Size**: Emphasis shifted from oversized elements to consistent, professional proportions
+- **Color/Shape Emphasis**: Visual distinction through strategic use of color borders and backgrounds rather than disproportionate sizing
+- **Content Accuracy**: Updated messaging to reflect actual capabilities (130+ curated sources) instead of inflated claims
+- **Workflow Integration**: Better component integration (filter panel positioning) for improved user flow
+
+### **Key UI Improvements**
+- **Typography Scaling**: Reduced excessive sizing (text-5xl → h2) for better visual balance
+- **Spacing Optimization**: Refined spacing (space-y-16 → space-y-8) for better content flow
+- **Visual Hierarchy**: Enhanced through strategic color use (primary-300 borders, primary-25 backgrounds)
+- **Content Consolidation**: Removed duplicate elements for cleaner, focused interface
+
 ## Styling Conventions
 
 ### Color System
-The components use a custom Tailwind color palette for political lean visualization:
+The components use a custom Tailwind color palette for political lean visualization and UI enhancement:
 
 ```css
 /* Political Lean Colors */
@@ -219,6 +255,11 @@ The components use a custom Tailwind color palette for political lean visualizat
 .text-right-600    /* Right-leaning sources */
 .text-strong-left-600   /* Strongly left-leaning */
 .text-strong-right-600  /* Strongly right-leaning */
+
+/* UI Enhancement Colors (v2.4) */
+.border-primary-300  /* Enhanced visual distinction */
+.bg-primary-25       /* Subtle emphasis backgrounds */
+.border-primary-400  /* Hover state enhancements */
 ```
 
 ### Responsive Breakpoints

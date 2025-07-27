@@ -104,16 +104,45 @@ export default function TopicSelectionModal({
     }
   }, [getFocusableElements])
 
-  // Enhanced cleanup function to prevent memory leaks
-  const cleanupModal = useCallback(() => {
-    try {
-      // Remove event listeners with null checks
-      if (typeof document !== 'undefined') {
-        document.removeEventListener('keydown', handleKeyDown)
+  // Modal lifecycle management - fixed memory leak
+  useEffect(() => {
+    if (!isOpen) return
+
+    // Store the currently focused element before opening modal
+    previousFocusRef.current = document.activeElement as HTMLElement
+    
+    // Create event handler inside useEffect to avoid stale closures
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose()
+      } else if (event.key === 'Tab') {
+        handleTabNavigation(event)
       }
+    }
+    
+    // Add event listeners
+    document.addEventListener('keydown', handleKeyDown)
+    
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden'
+    
+    // Set initial focus after a brief delay to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
+      const focusableElements = getFocusableElements()
+      if (focusableElements.length > 0) {
+        focusableElements[0].focus()
+      }
+    }, 100)
+    
+    // Cleanup function
+    return () => {
+      clearTimeout(timeoutId)
       
-      // Reset body overflow with error handling
-      if (typeof document !== 'undefined' && document.body) {
+      // Remove event listeners
+      document.removeEventListener('keydown', handleKeyDown)
+      
+      // Reset body overflow
+      if (document.body) {
         document.body.style.overflow = 'unset'
       }
       
@@ -125,56 +154,8 @@ export default function TopicSelectionModal({
           console.warn('Failed to return focus to previous element:', error)
         }
       }
-    } catch (error) {
-      console.warn('Error during modal cleanup:', error)
     }
-  }, [])
-
-  // Combined keyboard event handler
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      onClose()
-    } else if (event.key === 'Tab') {
-      handleTabNavigation(event)
-    }
-  }, [onClose, handleTabNavigation])
-
-  // Modal lifecycle management
-  useEffect(() => {
-    if (isOpen) {
-      // Store the currently focused element before opening modal
-      previousFocusRef.current = document.activeElement as HTMLElement
-      
-      // Add event listeners
-      document.addEventListener('keydown', handleKeyDown)
-      
-      // Prevent body scroll when modal is open
-      document.body.style.overflow = 'hidden'
-      
-      // Set initial focus after a brief delay to ensure DOM is ready
-      const timeoutId = setTimeout(() => {
-        const focusableElements = getFocusableElements()
-        if (focusableElements.length > 0) {
-          focusableElements[0].focus()
-        }
-      }, 100)
-      
-      return () => {
-        clearTimeout(timeoutId)
-        cleanupModal()
-      }
-    } else {
-      // Ensure cleanup runs when modal closes
-      cleanupModal()
-    }
-  }, [isOpen, handleKeyDown, getFocusableElements, cleanupModal])
-
-  // Cleanup on component unmount
-  useEffect(() => {
-    return () => {
-      cleanupModal()
-    }
-  }, [cleanupModal])
+  }, [isOpen, onClose, handleTabNavigation, getFocusableElements])
 
   // Memoize complex calculation to prevent unnecessary re-computation
   const canAnalyze = useMemo(() => {
@@ -266,11 +247,21 @@ export default function TopicSelectionModal({
                     placeholder="artificial intelligence, climate policy, economic trends..."
                     value={customSearchTerms.join(', ')}
                     onChange={(e) => {
-                      const terms = e.target.value
+                      const rawTerms = e.target.value
                         .split(/[,\s]+/)
                         .map(term => term.trim().toLowerCase())
                         .filter(term => term.length > 0)
                         .slice(0, 10);
+                      
+                      // Import sanitizeSearchTerms when available
+                      const terms = rawTerms.filter(term => {
+                        // Basic validation inline until we import the function
+                        return term.length <= 100 && 
+                               !/<script/i.test(term) && 
+                               !/javascript:/i.test(term) &&
+                               !/on\w+\s*=/i.test(term);
+                      });
+                      
                       onCustomSearchTermsChange(terms);
                       if (terms.length > 0) {
                         onTopicChange('Custom Search');

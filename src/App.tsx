@@ -214,36 +214,49 @@ function App() {
     }))
   }, [])
 
-  // Client-side filtering for performance - memoized to prevent unnecessary recalculation
-  const applySourceFilters = useCallback((languages: NewsLanguage[], countries: string[]) => {
-    const filteredSources = unifiedSourceService.filterSources(state.allSources, {
-      languages: languages,
-      countries: countries,
-      categories: [],
-      search: ''
-    })
-
-    setState(prev => ({ 
-      ...prev, 
-      availableSources: filteredSources,
-      // Clear selected sources that are no longer available after filtering
-      selectedSources: prev.selectedSources.filter(id => 
-        filteredSources.some(source => source.id === id)
-      )
-    }))
-  }, [state.allSources])
+  // Client-side filtering moved inline to prevent stale closures
 
   const handleLanguagesChange = useCallback((languages: NewsLanguage[]) => {
-    setState(prev => ({ ...prev, selectedLanguages: languages }))
-    // Apply filters client-side for instant results
-    applySourceFilters(languages, state.selectedCountries)
-  }, [applySourceFilters, state.selectedCountries])
+    setState(prev => {
+      // Apply filters directly in setState to avoid stale closures
+      const filteredSources = unifiedSourceService.filterSources(prev.allSources, {
+        languages,
+        countries: prev.selectedCountries,
+        categories: [],
+        search: ''
+      })
+      
+      return {
+        ...prev,
+        selectedLanguages: languages,
+        availableSources: filteredSources,
+        selectedSources: prev.selectedSources.filter(id => 
+          filteredSources.some(source => source.id === id)
+        )
+      }
+    })
+  }, [])
 
   const handleCountriesChange = useCallback((countries: string[]) => {
-    setState(prev => ({ ...prev, selectedCountries: countries }))
-    // Apply filters client-side for instant results
-    applySourceFilters(state.selectedLanguages, countries)
-  }, [applySourceFilters, state.selectedLanguages])
+    setState(prev => {
+      // Apply filters directly in setState to avoid stale closures
+      const filteredSources = unifiedSourceService.filterSources(prev.allSources, {
+        languages: prev.selectedLanguages,
+        countries,
+        categories: [],
+        search: ''
+      })
+      
+      return {
+        ...prev,
+        selectedCountries: countries,
+        availableSources: filteredSources,
+        selectedSources: prev.selectedSources.filter(id => 
+          filteredSources.some(source => source.id === id)
+        )
+      }
+    })
+  }, [])
 
   const handleDateRangeChange = useCallback((dateRange: DateRange) => {
     setState(prev => ({ ...prev, selectedDateRange: dateRange }))
@@ -421,10 +434,12 @@ function App() {
         });
 
         // Separate user articles from opposing perspectives
+        const userSources = state.selectedSources
+          .map(id => state.availableSources.find(s => s.id === id))
+          .filter((source): source is NewsSource => source !== undefined);
+          
         const { userArticles, opposingArticles } = getOpposingPerspectives(
-          state.selectedSources.map(id => {
-            return state.availableSources.find(s => s.id === id);
-          }).filter(Boolean) as NewsSource[],
+          userSources,
           filteredArticles,
           state.selectedSort
         );

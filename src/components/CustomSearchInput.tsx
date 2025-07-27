@@ -24,7 +24,7 @@ export default function CustomSearchInput({
     if (searchTerms.length > 0) {
       setInputValue(searchTerms.join(', '))
     }
-  }, [])
+  }, [searchTerms])
 
   const parseSearchTerms = (value: string): string[] => {
     if (!value.trim()) return []

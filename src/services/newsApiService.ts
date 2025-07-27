@@ -15,6 +15,16 @@ export class NewsAPIError extends Error {
 const API_KEY = import.meta.env.VITE_NEWS_API_KEY;
 const BASE_URL = 'https://newsapi.org/v2';
 
+// Validate API key on module load
+if (!API_KEY) {
+  console.error('VITE_NEWS_API_KEY environment variable is required');
+  throw new Error('NewsAPI key is not configured. Please add VITE_NEWS_API_KEY to your environment variables.');
+}
+
+if (API_KEY.length < 32) {
+  console.warn('NewsAPI key appears to be invalid (too short)');
+}
+
 // Cache for available NewsAPI sources
 let cachedNewsAPISources: Set<string> | null = null;
 let sourceCacheTimestamp = 0;
@@ -37,7 +47,9 @@ export async function fetchAvailableNewsAPISources(): Promise<Set<string>> {
     }
     
     const data = await response.json();
-    const sources = new Set<string>(data.sources?.map((s: any) => s.id) || []);
+    const sources = new Set<string>(
+      data.sources?.map((s: { id: string; name?: string; description?: string }) => s.id) || []
+    );
     
     // Cache the results
     cachedNewsAPISources = sources;
