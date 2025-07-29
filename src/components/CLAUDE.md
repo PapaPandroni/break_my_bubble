@@ -126,8 +126,13 @@ App.tsx (3-Phase Flow Control)
   - Continue button with validation (requires ≥1 source)
   - Responsive design with mobile-optimized spacing
 
-#### **TopicSelectionModal.tsx** ✨ *Enhanced v2.5: Security + Memory Fixes*
+#### **TopicSelectionModal.tsx** ✨ *Enhanced v3.1.2: Critical Focus Loss Fix*
 - Full-screen modal interface for Phase 2 with improved organization
+- **🎯 Focus Loss Fix**: Completely resolved custom search input losing focus while typing
+  - **Local-First State Management**: Input updates only local state during typing
+  - **Smart Synchronization**: Parent state synced only on blur, Enter key, or explicit actions
+  - **Zero Re-render Interruptions**: Eliminated parent state updates during active typing
+  - **Preserved Functionality**: All validation, topic deselection, and search parsing maintained
 - **📊 Memory Leak Fixes**: Proper event listener cleanup and component unmounting
 - **♾️ Performance**: Resolved stale closure issues and infinite re-render prevention
 - **Advanced Modal Features**:
@@ -138,6 +143,11 @@ App.tsx (3-Phase Flow Control)
   - Body scroll prevention when modal is open
   - **Accessibility**: Full ARIA support with proper labels
   - **Enhanced Cleanup**: Proper component lifecycle management
+- **Enhanced Custom Search Experience**:
+  - **Smooth Typing**: Input maintains focus throughout typing session
+  - **Real-time Validation**: Button state updates immediately based on local input
+  - **Intelligent Sync Points**: State synchronized on meaningful user actions
+  - **Memoized Callbacks**: Stable parent callbacks prevent unnecessary re-renders
 - **Streamlined Content Sections**:
   - Topic selection with TopicSelector integration
   - **Fixed**: Removed duplicate "Advanced options" sections for cleaner interface

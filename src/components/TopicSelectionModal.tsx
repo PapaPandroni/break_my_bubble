@@ -61,14 +61,20 @@ export default function TopicSelectionModal({
   const previousFocusRef = useRef<HTMLElement | null>(null)
   const firstFocusableRef = useRef<HTMLElement | null>(null)
   const lastFocusableRef = useRef<HTMLElement | null>(null)
+  const customSearchInputRef = useRef<HTMLInputElement>(null)
   
   // Local state for custom search input to prevent focus loss
   const [customSearchInput, setCustomSearchInput] = useState('')
   
-  // Initialize local input state from props
+  // Debounce timer ref for cleanup
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  
+  // Initialize local input state from props only when modal opens
   useEffect(() => {
-    setCustomSearchInput(customSearchTerms.join(', '))
-  }, [customSearchTerms])
+    if (isOpen && customSearchTerms.length > 0) {
+      setCustomSearchInput(customSearchTerms.join(', '))
+    }
+  }, [isOpen]) // Remove customSearchTerms dependency to prevent sync loops
   
   // Parse search terms without affecting input state
   const parseCustomSearchTerms = useCallback((value: string): string[] => {
@@ -83,28 +89,53 @@ export default function TopicSelectionModal({
     return sanitizedTerms;
   }, [])
   
-  // Handle custom search input changes with auto-deselect topic
-  const handleCustomSearchChange = useCallback((value: string) => {
-    setCustomSearchInput(value)
-    
-    const parsedTerms = parseCustomSearchTerms(value)
-    
-    // If user starts typing and has a topic selected, deselect it
-    if (value.trim() && selectedTopic && selectedTopic !== 'Custom Search') {
-      onTopicChange('')
+  // Sync local state to parent - only called when user stops typing or explicitly commits
+  const syncToParentState = useCallback((value: string, parsedTerms: string[]) => {
+    // Clear any existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
     }
     
-    // Update parent state
+    const hasContent = value.trim().length > 0
+    const hasValidTerms = parsedTerms.length > 0
+    
+    // Update search terms first
     onCustomSearchTermsChange(parsedTerms)
     
-    // Set to custom search if we have terms
-    if (parsedTerms.length > 0) {
+    // Then handle topic selection logic
+    if (hasValidTerms) {
+      // If we have valid terms, set to custom search
       onTopicChange('Custom Search')
-    } else if (!value.trim()) {
-      // Clear topic selection if input is empty
+    } else if (!hasContent) {
+      // If input is completely empty, clear topic selection
+      onTopicChange('')
+    } else if (hasContent && selectedTopic && selectedTopic !== 'Custom Search') {
+      // If user starts typing and has a different topic selected, deselect it
       onTopicChange('')
     }
-  }, [selectedTopic, onTopicChange, onCustomSearchTermsChange, parseCustomSearchTerms])
+  }, [onCustomSearchTermsChange, onTopicChange, selectedTopic])
+  
+  // Handle custom search input changes - only update local state during typing
+  const handleCustomSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    
+    // Update local state immediately for responsive UI - NO parent state updates
+    setCustomSearchInput(value)
+  }, [])
+
+  // Handle when user stops typing (blur) - sync to parent state
+  const handleCustomSearchBlur = useCallback(() => {
+    const parsedTerms = parseCustomSearchTerms(customSearchInput)
+    syncToParentState(customSearchInput, parsedTerms)
+  }, [customSearchInput, parseCustomSearchTerms, syncToParentState])
+
+  // Handle Enter key - sync to parent state immediately
+  const handleCustomSearchKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const parsedTerms = parseCustomSearchTerms(customSearchInput)
+      syncToParentState(customSearchInput, parsedTerms)
+    }
+  }, [customSearchInput, parseCustomSearchTerms, syncToParentState])
   // Get all focusable elements within the modal
   const getFocusableElements = useCallback((): HTMLElement[] => {
     if (!modalRef.current) return []
@@ -190,6 +221,12 @@ export default function TopicSelectionModal({
     return () => {
       cancelAnimationFrame(animationFrameId)
       
+      // Clear debounce timer to prevent memory leaks
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+        debounceTimerRef.current = null
+      }
+      
       // Remove event listeners
       document.removeEventListener('keydown', handleKeyDown)
       
@@ -224,19 +261,32 @@ export default function TopicSelectionModal({
   }, [isOpen, onClose, handleTabNavigation, getFocusableElements])
 
   // Memoize complex calculation to prevent unnecessary re-computation
+  // Use local state for custom search to enable real-time validation
   const canAnalyze = useMemo(() => {
-    return selectedTopic && (
-      (selectedTopic !== 'Custom Search') ||
-      (selectedTopic === 'Custom Search' && customSearchTerms.length > 0)
-    )
-  }, [selectedTopic, customSearchTerms.length])
+    if (!selectedTopic) return false
+    
+    if (selectedTopic !== 'Custom Search') {
+      return true
+    }
+    
+    // For custom search, check local input state for real-time validation
+    const localParsedTerms = parseCustomSearchTerms(customSearchInput)
+    return localParsedTerms.length > 0
+  }, [selectedTopic, customSearchInput, parseCustomSearchTerms])
 
   // Memoize event handlers
   const handleAnalyze = useCallback(() => {
     if (canAnalyze && !isLoading) {
-      onAnalyze()
+      // Sync current input state before analyzing
+      const parsedTerms = parseCustomSearchTerms(customSearchInput)
+      syncToParentState(customSearchInput, parsedTerms)
+      
+      // Small delay to ensure state is updated before analysis
+      setTimeout(() => {
+        onAnalyze()
+      }, 50)
     }
-  }, [canAnalyze, isLoading, onAnalyze])
+  }, [canAnalyze, isLoading, customSearchInput, parseCustomSearchTerms, syncToParentState, onAnalyze])
 
   const handleClose = useCallback(() => {
     onClose()
@@ -313,11 +363,14 @@ export default function TopicSelectionModal({
                 </label>
                 <div className="relative group">
                   <input
+                    ref={customSearchInputRef}
                     id="topic-search-input"
                     type="text"
                     placeholder="artificial intelligence, climate policy, economic trends..."
                     value={customSearchInput}
-                    onChange={(e) => handleCustomSearchChange(e.target.value)}
+                    onChange={handleCustomSearchChange}
+                    onBlur={handleCustomSearchBlur}
+                    onKeyDown={handleCustomSearchKeyDown}
                     className="w-full px-6 py-4 text-lg bg-white border-2 border-gray-200 rounded-2xl shadow-glow-purple focus:outline-none focus:border-secondary-400 focus:shadow-glow-purple focus:ring-4 focus:ring-secondary-200 focus:ring-offset-2 transition-all duration-300 placeholder-gray-400 min-h-[56px]"
                     aria-describedby="search-help-text"
                     autoComplete="off"
@@ -347,10 +400,10 @@ export default function TopicSelectionModal({
                               const newTerms = customSearchTerms.filter((_, i) => i !== index);
                               const newInputValue = newTerms.join(', ');
                               setCustomSearchInput(newInputValue);
-                              onCustomSearchTermsChange(newTerms);
-                              if (newTerms.length === 0) {
-                                onTopicChange('');
-                              }
+                              
+                              // Immediately sync to parent for explicit user actions
+                              syncToParentState(newInputValue, newTerms);
+                              
                               announceToScreenReader(`Removed search term: ${term}`, 'polite');
                             }}
                             className="ml-2 text-secondary-600 hover:text-secondary-800 focus:outline-none focus:ring-2 focus:ring-secondary-400 focus:ring-offset-1 rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center"

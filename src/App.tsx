@@ -327,6 +327,15 @@ function App() {
     announceToScreenReader(`Sort changed to ${sortLabels[sort]}`, 'polite')
   }, [])
 
+  // Memoized callbacks for topic selection to prevent focus loss
+  const handleTopicChange = useCallback((topic: string) => {
+    setState(prev => ({ ...prev, selectedTopic: topic }))
+  }, [])
+
+  const handleCustomSearchTermsChange = useCallback((terms: string[]) => {
+    setState(prev => ({ ...prev, customSearchTerms: terms }))
+  }, [])
+
   // Step navigation handlers
   const handleContinueToModal = () => {
     setState(prev => ({ ...prev, currentStep: 'modal' }))
@@ -601,13 +610,9 @@ function App() {
                 <TopicSelectionModal
                 topics={state.topics}
                 selectedTopic={state.selectedTopic}
-                onTopicChange={(topic) => 
-                  setState(prev => ({ ...prev, selectedTopic: topic }))
-                }
+                onTopicChange={handleTopicChange}
                 customSearchTerms={state.customSearchTerms}
-                onCustomSearchTermsChange={(terms) =>
-                  setState(prev => ({ ...prev, customSearchTerms: terms }))
-                }
+                onCustomSearchTermsChange={handleCustomSearchTermsChange}
                 selectedLanguages={state.selectedLanguages}
                 onLanguagesChange={handleLanguagesChange}
                 selectedCountries={state.selectedCountries}
