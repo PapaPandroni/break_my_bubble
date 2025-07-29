@@ -10,6 +10,14 @@ The utils directory provides:
 - **Pure Functions**: Stateless, testable utility functions
 - **Cross-cutting Concerns**: Functions used across multiple components/services
 
+### **Phase 4: Accessibility & UX Utilities (v3.1)** ✨
+
+Enhanced utilities supporting improved user experience:
+- **Accessibility Utilities**: Screen reader announcements and focus management helpers
+- **Mobile Optimization**: Responsive utility functions for mobile-first design
+- **Enhanced Security**: Improved validation and sanitization functions
+- **Error Recovery**: Utility functions supporting actionable error messaging
+
 ## File Structure
 
 ```

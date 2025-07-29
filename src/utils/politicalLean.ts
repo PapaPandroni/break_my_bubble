@@ -2,23 +2,23 @@
 export type PoliticalLean = 'left' | 'lean-left' | 'center' | 'lean-right' | 'right' | 'unknown'
 
 /**
- * Returns the CSS classes for styling political lean badges with enhanced differentiation
+ * Returns WCAG 2.1 AA compliant CSS classes for political lean badges (4.5:1+ contrast ratio)
  */
 export const getPoliticalLeanColor = (lean: PoliticalLean): string => {
   switch (lean) {
     case 'left':
-      return 'bg-strong-left-100 text-strong-left-800 border-strong-left-300 shadow-soft'
+      return 'bg-strong-left-100 text-strong-left-900 border-strong-left-300 shadow-soft'
     case 'lean-left':
-      return 'bg-lean-left-100 text-lean-left-700 border-lean-left-300 shadow-soft'
+      return 'bg-lean-left-100 text-lean-left-900 border-lean-left-300 shadow-soft'
     case 'center':
-      return 'bg-center-100 text-center-700 border-center-400 shadow-soft'
+      return 'bg-center-100 text-center-900 border-center-300 shadow-soft'
     case 'lean-right':
-      return 'bg-lean-right-100 text-lean-right-700 border-lean-right-300 shadow-soft'
+      return 'bg-lean-right-100 text-lean-right-900 border-lean-right-300 shadow-soft'
     case 'right':
-      return 'bg-strong-right-100 text-strong-right-800 border-strong-right-300 shadow-soft'
+      return 'bg-strong-right-100 text-strong-right-900 border-strong-right-300 shadow-soft'
     case 'unknown':
     default:
-      return 'bg-unknown-100 text-unknown-700 border-unknown-400 shadow-soft'
+      return 'bg-unknown-100 text-unknown-900 border-unknown-300 shadow-soft'
   }
 }
 

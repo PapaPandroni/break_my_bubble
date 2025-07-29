@@ -1,7 +1,10 @@
+import { useEffect } from 'react'
 import { Article } from '../types'
 import { truncateText, sanitizeURL, isValidImageURL, extractTextFromHTML } from '../utils/helpers'
 import { formatRelativeTime } from '../utils/dateUtils'
 import { getPoliticalLeanColor, getPoliticalLeanLabel, getPoliticalLeanCardStyle } from '../utils/politicalLean'
+import { announceToScreenReader } from '../utils/accessibility'
+import { NoResultsMessage } from './ErrorMessage'
 
 interface ResultsDisplayProps {
   userArticles: Article[]
@@ -35,8 +38,8 @@ function ArticleCard({ article }: ArticleCardProps) {
         </div>
       )}
 
-      <div className="p-6">
-        <header className="flex items-center justify-between mb-4">
+      <div className="p-4 sm:p-6">
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
           <div className="flex items-center space-x-3">
             <span className={`px-3 py-1.5 text-xs font-semibold rounded-xl border-2 ${getPoliticalLeanColor(article.sourceLean)}`}>
               {article.source}
@@ -52,7 +55,7 @@ function ArticleCard({ article }: ArticleCardProps) {
               {getPoliticalLeanLabel(article.sourceLean)}
             </span>
           </div>
-          <time className="text-sm text-gray-500 font-medium" dateTime={article.pubDate}>
+          <time className="text-sm text-gray-500 font-medium self-start sm:self-auto" dateTime={article.pubDate}>
             {formatRelativeTime(article.pubDate)}
           </time>
         </header>
@@ -123,8 +126,8 @@ function ArticlesList({ articles, title, emptyMessage }: {
   emptyMessage: string
 }) {
   return (
-    <div className="bg-white rounded-2xl shadow-medium border border-gray-100 p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+    <div className="bg-white rounded-2xl shadow-medium border border-gray-100 p-4 sm:p-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
         <span className="w-2 h-8 bg-primary-500 rounded-full mr-3"></span>
         {title}
       </h2>
@@ -153,23 +156,24 @@ export default function ResultsDisplay({
 }: ResultsDisplayProps) {
   const totalArticles = userArticles.length + opposingArticles.length
 
+  // Announce results to screen readers when articles load
+  useEffect(() => {
+    if (totalArticles > 0) {
+      const message = `Analysis complete. Found ${userArticles.length} articles from your sources and ${opposingArticles.length} opposing perspective articles for ${topic}.`
+      announceToScreenReader(message, 'polite')
+    }
+  }, [totalArticles, userArticles.length, opposingArticles.length, topic])
+
   if (totalArticles === 0) {
     return (
-      <div className="text-center py-16 bg-white rounded-2xl shadow-medium border border-gray-100">
-        <div className="text-gray-400 text-8xl mb-6">📰</div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">
-          No Articles Found
-        </h2>
-        <p className="text-gray-600 max-w-lg mx-auto text-lg leading-relaxed">
-          No articles found for <span className="font-semibold text-gray-900">"{topic}"</span> in the selected timeframe. 
-          Try expanding your time range or selecting a different topic.
-        </p>
+      <div className="py-8 sm:py-16">
+        <NoResultsMessage topic={topic} />
       </div>
     )
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" role="region" aria-label="Analysis results" aria-live="polite">
       {/* Enhanced Results Summary */}
       <div className="bg-gradient-to-r from-white to-gray-50 border border-gray-100 rounded-2xl shadow-medium p-8">
         <div className="text-center mb-8">
@@ -181,7 +185,7 @@ export default function ResultsDisplay({
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-center mb-6 sm:mb-8">
           <div className="p-6 bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl border border-primary-200 shadow-soft">
             <div className="text-4xl font-bold text-primary-600 mb-2">{userArticles.length}</div>
             <div className="text-sm font-semibold text-primary-700">Your Sources</div>
@@ -207,8 +211,8 @@ export default function ResultsDisplay({
         </div>
       </div>
 
-      {/* Side-by-side comparison */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Mobile-optimized comparison layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
         <ArticlesList
           articles={userArticles}
           title={`Your Sources (${userArticles.length})`}

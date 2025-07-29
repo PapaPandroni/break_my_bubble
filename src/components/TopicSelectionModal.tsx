@@ -1,8 +1,10 @@
-import { useEffect, useRef, useCallback, useMemo } from 'react'
+import { useEffect, useRef, useCallback, useMemo, useState } from 'react'
 import { TopicKeywords, NewsLanguage, NewsSortBy } from '../types'
 import { DateRange } from './DateRangePicker'
 import TopicSelector from './TopicSelector'
 import FilterPanel from './FilterPanel'
+import { manageFocus, screenReader, announceToScreenReader } from '../utils/accessibility'
+import { validateSearchTerm, sanitizeSearchTerms } from '../utils/helpers'
 
 interface TopicSelectionModalProps {
   // Topic selection
@@ -59,6 +61,50 @@ export default function TopicSelectionModal({
   const previousFocusRef = useRef<HTMLElement | null>(null)
   const firstFocusableRef = useRef<HTMLElement | null>(null)
   const lastFocusableRef = useRef<HTMLElement | null>(null)
+  
+  // Local state for custom search input to prevent focus loss
+  const [customSearchInput, setCustomSearchInput] = useState('')
+  
+  // Initialize local input state from props
+  useEffect(() => {
+    setCustomSearchInput(customSearchTerms.join(', '))
+  }, [customSearchTerms])
+  
+  // Parse search terms without affecting input state
+  const parseCustomSearchTerms = useCallback((value: string): string[] => {
+    const rawTerms = value
+      .split(/[,\s]+/)
+      .map(term => term.trim())
+      .filter(term => term.length > 0);
+    
+    const validTerms = rawTerms.filter(validateSearchTerm);
+    const sanitizedTerms = sanitizeSearchTerms(validTerms).slice(0, 10);
+    
+    return sanitizedTerms;
+  }, [])
+  
+  // Handle custom search input changes with auto-deselect topic
+  const handleCustomSearchChange = useCallback((value: string) => {
+    setCustomSearchInput(value)
+    
+    const parsedTerms = parseCustomSearchTerms(value)
+    
+    // If user starts typing and has a topic selected, deselect it
+    if (value.trim() && selectedTopic && selectedTopic !== 'Custom Search') {
+      onTopicChange('')
+    }
+    
+    // Update parent state
+    onCustomSearchTermsChange(parsedTerms)
+    
+    // Set to custom search if we have terms
+    if (parsedTerms.length > 0) {
+      onTopicChange('Custom Search')
+    } else if (!value.trim()) {
+      // Clear topic selection if input is empty
+      onTopicChange('')
+    }
+  }, [selectedTopic, onTopicChange, onCustomSearchTermsChange, parseCustomSearchTerms])
   // Get all focusable elements within the modal
   const getFocusableElements = useCallback((): HTMLElement[] => {
     if (!modalRef.current) return []
@@ -104,12 +150,15 @@ export default function TopicSelectionModal({
     }
   }, [getFocusableElements])
 
-  // Modal lifecycle management - fixed memory leak
+  // Enhanced modal lifecycle management with accessibility improvements
   useEffect(() => {
     if (!isOpen) return
 
     // Store the currently focused element before opening modal
     previousFocusRef.current = document.activeElement as HTMLElement
+    
+    // Announce modal opening to screen readers
+    screenReader.announceModal(true, 'Search the news')
     
     // Create event handler inside useEffect to avoid stale closures
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -126,17 +175,20 @@ export default function TopicSelectionModal({
     // Prevent body scroll when modal is open
     document.body.style.overflow = 'hidden'
     
-    // Set initial focus after a brief delay to ensure DOM is ready
-    const timeoutId = setTimeout(() => {
+    // Set initial focus immediately using requestAnimationFrame for better timing
+    const focusInitial = () => {
       const focusableElements = getFocusableElements()
       if (focusableElements.length > 0) {
-        focusableElements[0].focus()
+        manageFocus.focusElement(focusableElements[0])
       }
-    }, 100)
+    }
+    
+    // Use requestAnimationFrame for better timing than setTimeout
+    const animationFrameId = requestAnimationFrame(focusInitial)
     
     // Cleanup function
     return () => {
-      clearTimeout(timeoutId)
+      cancelAnimationFrame(animationFrameId)
       
       // Remove event listeners
       document.removeEventListener('keydown', handleKeyDown)
@@ -146,10 +198,24 @@ export default function TopicSelectionModal({
         document.body.style.overflow = 'unset'
       }
       
-      // Return focus to the element that opened the modal
+      // Announce modal closing to screen readers
+      screenReader.announceModal(false, 'Search the news')
+      
+      // Return focus to the element that opened the modal with verification
       if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
         try {
-          previousFocusRef.current.focus()
+          manageFocus.focusElement(previousFocusRef.current)
+          
+          // Verify focus was successfully restored
+          requestAnimationFrame(() => {
+            if (document.activeElement !== previousFocusRef.current) {
+              // Fallback: focus first focusable element in body
+              const fallbackElement = document.querySelector('button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])') as HTMLElement
+              if (fallbackElement) {
+                manageFocus.focusElement(fallbackElement)
+              }
+            }
+          })
         } catch (error) {
           console.warn('Failed to return focus to previous element:', error)
         }
@@ -196,11 +262,11 @@ export default function TopicSelectionModal({
       />
       
       {/* Modal Container */}
-      <div className="flex min-h-full items-center justify-center p-4">
+      <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
         {/* Modal Content */}
         <div 
           ref={modalRef}
-          className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl transform transition-all"
+          className="relative w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-4xl bg-white rounded-2xl shadow-2xl transform transition-all"
           onClick={handleModalClick}
           role="dialog"
           aria-modal="true"
@@ -217,17 +283,18 @@ export default function TopicSelectionModal({
             </div>
             <button
               onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-4 focus:ring-gray-200 rounded-xl p-3 hover:bg-white hover:shadow-soft transition-all duration-200"
-              aria-label="Close modal"
+              className="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-4 focus:ring-primary-200 focus:ring-offset-2 rounded-xl p-3 hover:bg-white hover:shadow-soft transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Close search dialog"
+              title="Close search dialog"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
 
           {/* Content */}
-          <div className="p-8 space-y-10 max-h-[70vh] overflow-y-auto">
+          <div className="p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8 md:space-y-10 max-h-[80vh] sm:max-h-[75vh] md:max-h-[70vh] overflow-y-auto">
             {/* Custom Search Hero Section */}
             <div className="text-center space-y-6">
               <div className="space-y-3">
@@ -239,62 +306,62 @@ export default function TopicSelectionModal({
                 </p>
               </div>
               
-              {/* Always-visible Custom Search Input */}
+              {/* Always-visible Custom Search Input with enhanced accessibility */}
               <div className="max-w-2xl mx-auto">
+                <label htmlFor="topic-search-input" className="sr-only">
+                  Enter search topics or keywords
+                </label>
                 <div className="relative group">
                   <input
+                    id="topic-search-input"
                     type="text"
                     placeholder="artificial intelligence, climate policy, economic trends..."
-                    value={customSearchTerms.join(', ')}
-                    onChange={(e) => {
-                      const rawTerms = e.target.value
-                        .split(/[,\s]+/)
-                        .map(term => term.trim().toLowerCase())
-                        .filter(term => term.length > 0)
-                        .slice(0, 10);
-                      
-                      // Import sanitizeSearchTerms when available
-                      const terms = rawTerms.filter(term => {
-                        // Basic validation inline until we import the function
-                        return term.length <= 100 && 
-                               !/<script/i.test(term) && 
-                               !/javascript:/i.test(term) &&
-                               !/on\w+\s*=/i.test(term);
-                      });
-                      
-                      onCustomSearchTermsChange(terms);
-                      if (terms.length > 0) {
-                        onTopicChange('Custom Search');
-                      }
-                    }}
-                    className="w-full px-6 py-4 text-lg bg-white border-2 border-gray-200 rounded-2xl shadow-glow-purple focus:outline-none focus:border-secondary-400 focus:shadow-glow-purple transition-all duration-300 placeholder-gray-400"
+                    value={customSearchInput}
+                    onChange={(e) => handleCustomSearchChange(e.target.value)}
+                    className="w-full px-6 py-4 text-lg bg-white border-2 border-gray-200 rounded-2xl shadow-glow-purple focus:outline-none focus:border-secondary-400 focus:shadow-glow-purple focus:ring-4 focus:ring-secondary-200 focus:ring-offset-2 transition-all duration-300 placeholder-gray-400 min-h-[56px]"
+                    aria-describedby="search-help-text"
+                    autoComplete="off"
                   />
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-secondary-500/20 to-primary-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>
                 </div>
+                <div id="search-help-text" className="text-sm text-gray-600 mt-2 text-center">
+                  Separate multiple topics with commas or spaces. Maximum 10 terms.
+                </div>
                 
-                {/* Search Terms Display */}
+                {/* Search Terms Display with enhanced accessibility */}
                 {customSearchTerms.length > 0 && (
-                  <div className="mt-4 flex flex-wrap justify-center gap-2">
-                    {customSearchTerms.map((term, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-3 py-1.5 bg-secondary-100 text-secondary-800 text-sm rounded-full font-medium"
-                      >
-                        {term}
-                        <button
-                          onClick={() => {
-                            const newTerms = customSearchTerms.filter((_, i) => i !== index);
-                            onCustomSearchTermsChange(newTerms);
-                            if (newTerms.length === 0) {
-                              onTopicChange('');
-                            }
-                          }}
-                          className="ml-2 text-secondary-600 hover:text-secondary-800 focus:outline-none"
+                  <div className="mt-4">
+                    <div className="sr-only" aria-live="polite">
+                      {customSearchTerms.length} search term{customSearchTerms.length === 1 ? '' : 's'} entered: {customSearchTerms.join(', ')}
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-2" role="list" aria-label="Selected search terms">
+                      {customSearchTerms.map((term, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-3 py-1.5 bg-secondary-100 text-secondary-800 text-sm rounded-full font-medium"
+                          role="listitem"
                         >
-                          ×
-                        </button>
-                      </span>
-                    ))}
+                          {term}
+                          <button
+                            onClick={() => {
+                              const newTerms = customSearchTerms.filter((_, i) => i !== index);
+                              const newInputValue = newTerms.join(', ');
+                              setCustomSearchInput(newInputValue);
+                              onCustomSearchTermsChange(newTerms);
+                              if (newTerms.length === 0) {
+                                onTopicChange('');
+                              }
+                              announceToScreenReader(`Removed search term: ${term}`, 'polite');
+                            }}
+                            className="ml-2 text-secondary-600 hover:text-secondary-800 focus:outline-none focus:ring-2 focus:ring-secondary-400 focus:ring-offset-1 rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            aria-label={`Remove search term: ${term}`}
+                            title={`Remove ${term}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -314,7 +381,8 @@ export default function TopicSelectionModal({
             </div>
 
             {/* Topic Selection - Now Secondary */}
-            <div className="space-y-4">
+            <div className="space-y-4" id="topic-selection">
+              <h4 className="text-lg font-semibold text-gray-900 text-center mb-4">Quick Topic Selection</h4>
               <TopicSelector
                 topics={topics}
                 selectedTopic={selectedTopic}
@@ -323,7 +391,8 @@ export default function TopicSelectionModal({
             </div>
 
             {/* Filter Panel */}
-            <div>
+            <div id="filter-panel">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Advanced Filters</h4>
               <FilterPanel
                 selectedLanguages={selectedLanguages}
                 onLanguagesChange={onLanguagesChange}
@@ -343,36 +412,39 @@ export default function TopicSelectionModal({
           <div className="flex items-center justify-between p-8 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-white rounded-b-2xl">
             <button
               onClick={handleClose}
-              className="px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-800 focus:outline-none focus:ring-4 focus:ring-gray-200 focus:ring-offset-2 rounded-xl transition-all duration-200 hover:bg-white hover:shadow-soft"
+              className="px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-800 focus:outline-none focus:ring-4 focus:ring-gray-200 focus:ring-offset-2 rounded-xl transition-all duration-200 hover:bg-white hover:shadow-soft min-h-[44px] flex items-center"
+              aria-label="Go back to source selection"
             >
-              ← Back to sources
+              <span aria-hidden="true">←</span>
+              <span className="ml-2">Back to sources</span>
             </button>
             
             <div className="flex items-center space-x-4">
               {!canAnalyze && (
-                <p className="text-sm text-gray-500 font-medium">
-                  Enter a search term or select a topic
+                <p id="analyze-button-help" className="text-sm text-gray-500 font-medium" role="status">
+                  Enter a search term or select a topic to continue
                 </p>
               )}
               
               <button
                 onClick={handleAnalyze}
                 disabled={!canAnalyze || isLoading}
-                className={`px-10 py-4 text-lg font-bold rounded-2xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-offset-2 transform ${
+                className={`px-10 py-4 text-lg font-bold rounded-2xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-offset-2 transform min-h-[56px] ${
                   canAnalyze && !isLoading
                     ? 'bg-gradient-to-r from-primary-600 to-secondary-600 text-white hover:from-primary-700 hover:to-secondary-700 shadow-strong hover:shadow-glow hover:scale-105 hover:-translate-y-0.5 focus:ring-primary-200'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-soft'
                 }`}
+                aria-describedby={!canAnalyze ? 'analyze-button-help' : undefined}
               >
                 {isLoading ? (
                   <div className="flex items-center space-x-3">
-                    <div className="animate-spin w-6 h-6 border-3 border-white border-t-transparent rounded-full"></div>
+                    <div className="animate-spin w-6 h-6 border-3 border-white border-t-transparent rounded-full" role="status" aria-label="Loading"></div>
                     <span>Analyzing...</span>
                   </div>
                 ) : (
                   <span className="flex items-center space-x-2">
                     <span>BREAK MY BUBBLE</span>
-                    <span className="text-xl">🎯</span>
+                    <span className="text-xl" role="img" aria-label="target">🎯</span>
                   </span>
                 )}
               </button>

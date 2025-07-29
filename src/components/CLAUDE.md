@@ -12,6 +12,57 @@ The components are organized as functional components using React hooks for stat
 - **Accessibility**: ARIA labels, keyboard navigation, and screen reader support
 - **Responsive**: Mobile-first design with responsive breakpoints
 
+### **Security & Quality Enhancements (v2.5)** 🔒
+
+All components now include comprehensive security and quality improvements:
+
+**Security Features**:
+- **Input Sanitization**: DOMPurify integration in CustomSearchInput and content display
+- **XSS Protection**: Secure handling of user input and external content
+- **URL Validation**: Enhanced security for external links in ResultsDisplay
+- **Content Security**: Trusted domain validation for images and links
+
+**Code Quality Improvements**:
+- **Memory Leak Prevention**: Proper cleanup in TopicSelectionModal and event listeners
+- **Stale Closure Fixes**: Enhanced callback patterns to prevent infinite re-renders
+- **Type Safety**: Eliminated unsafe `any` types with proper type guards
+- **Performance**: Optimized component lifecycle and re-render prevention
+
+### **Phase 4: Frontend/UX Enhancements (v3.1.1)** ✨
+
+Complete user experience transformation with accessibility, mobile optimization, and refined interaction patterns:
+
+**Accessibility Compliance (WCAG 2.1 AA)**:
+- **Touch Target Compliance**: All interactive elements now meet 44px minimum requirement
+- **ARIA Live Regions**: Comprehensive screen reader support for dynamic content updates
+- **Enhanced Focus Management**: Improved modal focus trapping with immediate focus restoration
+- **Keyboard Navigation**: Full keyboard accessibility across all components
+
+**Mobile-First Optimization**:
+- **Responsive Modal Design**: Mobile-first breakpoints with optimized sizing and touch interactions
+- **Layout Optimization**: Enhanced spacing, typography, and component sizing for small screens
+- **Touch-Friendly Interfaces**: Optimized dropdown behavior and selector interactions
+- **Mobile Typography**: Responsive text sizing and improved readability
+
+**Enhanced Loading States**:
+- **Step-by-Step Progress**: Detailed loading indicators with visual progress tracking
+- **Shimmer Animations**: CSS keyframe animations for improved perceived performance
+- **Multiple Loading Variants**: Compact, default, and detailed loading state options
+- **Mobile-Optimized Skeletons**: Responsive skeleton components with enhanced animations
+
+**Comprehensive Error Recovery**:
+- **Actionable Error Messages**: Step-by-step recovery guidance for all error scenarios
+- **Multiple Error Types**: Specialized handling for Network, API, Validation, and Timeout errors
+- **Mobile-Responsive Error UI**: Touch-friendly error interfaces with contextual help
+- **Recovery Actions**: "Try Again", "Start Over", and contextual assistance buttons
+
+**Latest UX Refinements (v3.1.1)**:
+- **Toggleable Topic Selection**: Quick topic buttons now support deselection - click once to select, click again to deselect
+- **Fixed Custom Search Input**: Resolved focus loss issue - users can type smoothly without input losing focus after each character
+- **Smart Topic/Search Interaction**: Topic automatically deselects when user starts typing custom search terms for clear, intuitive behavior
+- **Streamlined Source Selection**: Removed political lean badges from selection phase to reduce visual clutter while maintaining credibility indicators
+- **Cleaner Interface**: Removed redundant text labels for a more polished user experience
+
 ## Component Hierarchy - 3-Phase UI Architecture ✨
 
 The application now implements a 3-phase user interface with modal-based interactions:
@@ -75,8 +126,10 @@ App.tsx (3-Phase Flow Control)
   - Continue button with validation (requires ≥1 source)
   - Responsive design with mobile-optimized spacing
 
-#### **TopicSelectionModal.tsx** ✨ *Enhanced v2.4: Streamlined Interface*
+#### **TopicSelectionModal.tsx** ✨ *Enhanced v2.5: Security + Memory Fixes*
 - Full-screen modal interface for Phase 2 with improved organization
+- **📊 Memory Leak Fixes**: Proper event listener cleanup and component unmounting
+- **♾️ Performance**: Resolved stale closure issues and infinite re-render prevention
 - **Advanced Modal Features**:
   - Backdrop click to close with proper event handling
   - Focus trapping and keyboard navigation (Tab/Shift+Tab)
@@ -84,6 +137,7 @@ App.tsx (3-Phase Flow Control)
   - Automatic focus management on open/close
   - Body scroll prevention when modal is open
   - **Accessibility**: Full ARIA support with proper labels
+  - **Enhanced Cleanup**: Proper component lifecycle management
 - **Streamlined Content Sections**:
   - Topic selection with TopicSelector integration
   - **Fixed**: Removed duplicate "Advanced options" sections for cleaner interface
@@ -122,14 +176,17 @@ App.tsx (3-Phase Flow Control)
 - Reset capability to return to landing page
 - Search context preservation for debugging
 
-#### **ResultsDisplay.tsx**
+#### **ResultsDisplay.tsx** ✨ *Enhanced Security*
 - Main results presentation component
+- **🔗 URL Security**: Enhanced validateURL() and sanitizeURL() functions for all external links
+- **🖼️ Image Security**: Trusted domain validation with isValidImageURL() for secure image loading
+- **🔒 Content Security**: DOMPurify sanitization for article content and descriptions
 - Side-by-side layout for user's sources vs opposing perspectives
 - **Intelligent Opposition Ranking**: Articles prioritized by political distance and credibility
 - Article cards with images, titles, descriptions, and metadata
 - Color-coded by political lean (left/center/right/lean-left/lean-right/unknown)
 - **Unknown Source Handling**: Proper display for sources with 'unknown' political classification
-- External links with proper attribution
+- External links with proper attribution and security validation
 - Enhanced features in NewsAPI mode: author, images, content previews
 
 ### Input & Selection Components
@@ -162,8 +219,10 @@ App.tsx (3-Phase Flow Control)
 - **Responsive Design**: Mobile-optimized layout within modal context
 - **State Management**: Centralized filter state through modal component
 
-#### **CustomSearchInput.tsx** ✨ *Enhanced Integration*
+#### **CustomSearchInput.tsx** ✨ *Enhanced Integration + Security*
 - **Free text search input** with comprehensive multilanguage support
+- **🔒 Security Enhancement**: DOMPurify integration for input sanitization
+- **🚫 XSS Protection**: Secure handling of user input to prevent script injection
 - **Real-time parsing**: Comma and space-separated terms with instant validation
 - **Visual term management**: Individual removable chips for each search term
 - **Modal Integration**: Optimized for use within TopicSelectionModal
@@ -229,19 +288,27 @@ These components are only visible/functional when `VITE_USE_NEWS_API=true`:
 - Retry functionality where applicable
 - Consistent error styling and UX
 
-## **UI/UX Enhancement Notes (v2.4)** ✨
+## **Security & Quality Enhancement Notes (v2.5)** 🔒
 
-### **Design Philosophy Updates**
-- **Consistency Over Size**: Emphasis shifted from oversized elements to consistent, professional proportions
-- **Color/Shape Emphasis**: Visual distinction through strategic use of color borders and backgrounds rather than disproportionate sizing
-- **Content Accuracy**: Updated messaging to reflect actual capabilities (130+ curated sources) instead of inflated claims
-- **Workflow Integration**: Better component integration (filter panel positioning) for improved user flow
+### **Security Improvements**
+- **Input Sanitization**: DOMPurify integration across all user input components
+- **XSS Protection**: Comprehensive protection against script injection attacks
+- **URL Validation**: Enhanced security for all external links and images
+- **Content Security**: Trusted domain validation and secure content handling
+- **API Security**: Enhanced validation and secure error handling patterns
 
-### **Key UI Improvements**
-- **Typography Scaling**: Reduced excessive sizing (text-5xl → h2) for better visual balance
-- **Spacing Optimization**: Refined spacing (space-y-16 → space-y-8) for better content flow
-- **Visual Hierarchy**: Enhanced through strategic color use (primary-300 borders, primary-25 backgrounds)
-- **Content Consolidation**: Removed duplicate elements for cleaner, focused interface
+### **Code Quality Fixes**
+- **Memory Leak Prevention**: Fixed TopicSelectionModal cleanup and event listener management
+- **Performance Optimization**: Resolved stale closure bugs preventing infinite re-renders
+- **Type Safety**: Enhanced TypeScript compliance with proper type guards
+- **Component Lifecycle**: Improved cleanup patterns and dependency management
+- **React Best Practices**: Fixed useEffect patterns and callback optimization
+
+### **Previous UI/UX Improvements (v2.4)**
+- **Consistency Over Size**: Professional proportions and strategic color emphasis
+- **Typography & Spacing**: Optimized sizing and refined spacing for better flow
+- **Content Accuracy**: Updated messaging to reflect actual capabilities
+- **Workflow Integration**: Enhanced component positioning and user experience
 
 ## Styling Conventions
 
@@ -305,23 +372,38 @@ All components implement:
 - **Semantic HTML** structure
 - **Touch-friendly** interfaces (44px minimum touch targets)
 
-## Performance Considerations
+## Performance & Security Considerations
 
+### **Enhanced Performance (v2.5 + v3.1)**
+- **Memory Leak Prevention**: Proper component cleanup and event listener management
+- **Stale Closure Fixes**: Enhanced callback patterns preventing infinite re-renders
 - **React.memo** for expensive render components
-- **useCallback** for event handlers to prevent unnecessary re-renders  
+- **useCallback** optimization for event handlers
 - **Lazy loading** for images in ResultsDisplay
 - **Debounced search** in selector components
-- **Virtualization** considered for large lists (not currently implemented)
+- **Shimmer Animations**: CSS keyframes for optimized loading performance
+- **Mobile-First Rendering**: Responsive components with optimized breakpoints
+- **Enhanced Focus Management**: requestAnimationFrame for immediate focus restoration
+
+### **Security Features**
+- **Input Sanitization**: DOMPurify protection against XSS attacks
+- **URL Validation**: Secure handling of external links and images
+- **Content Security**: Trusted domain validation for all external content
+- **Type Safety**: 100% TypeScript compliance preventing runtime errors
 
 ## Development Guidelines
 
 ### Adding New Components
 1. Create TypeScript file with proper interface definitions
-2. Implement accessibility features from the start
-3. Use Tailwind classes consistently with existing patterns
-4. Add responsive design considerations
-5. Include proper error handling
-6. Document props and usage in component comments
+2. **🔒 Security First**: Implement input sanitization and XSS protection
+3. **📊 Memory Safety**: Ensure proper cleanup and event listener management
+4. Implement accessibility features from the start
+5. Use Tailwind classes consistently with existing patterns
+6. Add responsive design considerations
+7. Include proper error handling
+8. **Type Safety**: Use strict TypeScript with proper type guards
+9. Document props and usage in component comments
+10. **Performance**: Optimize re-renders and component lifecycle
 
 ### Testing Considerations
 - Components should be testable in isolation

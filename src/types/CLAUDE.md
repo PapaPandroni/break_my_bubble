@@ -11,6 +11,14 @@ The types directory provides:
 - **Service Types**: Business logic and data processing interfaces
 - **Utility Types**: Helper types and enums
 
+### **Phase 4: Enhanced UX Types (v3.1)** ✨
+
+Additional type support for improved user experience:
+- **Accessibility Types**: Types for ARIA live regions and screen reader support
+- **Loading State Types**: Enhanced loading variants and progress indicator types
+- **Error Recovery Types**: Comprehensive error handling and recovery action types
+- **Mobile Optimization Types**: Responsive breakpoint and touch interaction types
+
 ## File Structure
 
 ```

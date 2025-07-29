@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Enhanced Political Lean Colors with Better Differentiation
+        // WCAG 2.1 AA Compliant Political Lean Colors (4.5:1+ contrast ratio)
         'strong-left': {
           25: '#f0f9ff',
           50: '#e0f2fe',
@@ -19,7 +19,7 @@ export default {
           600: '#0369a1',
           700: '#075985',
           800: '#0c4a6e',
-          900: '#0f172a',
+          900: '#082f49', // Darker for better contrast
         },
         'lean-left': {
           25: '#f8faff',
@@ -71,7 +71,7 @@ export default {
           600: '#991b1b',
           700: '#7f1d1d',
           800: '#6b1e1e',
-          900: '#5f1f1f',
+          900: '#450a0a', // Darker for better contrast
         },
         unknown: {
           25: '#fffef0',
@@ -84,7 +84,7 @@ export default {
           600: '#d97706',
           700: '#b45309',
           800: '#92400e',
-          900: '#78350f',
+          900: '#451a03', // Darker for better contrast
         },
         // Modern App Colors
         primary: {

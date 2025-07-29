@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { NewsLanguage } from '../types'
 import { AVAILABLE_LANGUAGES } from '../services/unifiedSourceService'
+import { generateId, announceToScreenReader } from '../utils/accessibility'
 
 interface LanguageSelectorProps {
   selectedLanguages: NewsLanguage[]
@@ -17,6 +18,11 @@ export default function LanguageSelector({
 }: LanguageSelectorProps) {
   const [showDropdown, setShowDropdown] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  
+  // Generate stable IDs for accessibility
+  const dropdownId = useRef(generateId('language-dropdown')).current
+  const searchInputId = useRef(generateId('language-search')).current
+  const helpTextId = useRef(generateId('language-help')).current
 
   // Filter languages based on search
   const filteredLanguages = AVAILABLE_LANGUAGES.filter(lang =>
@@ -27,12 +33,17 @@ export default function LanguageSelector({
 
   const handleLanguageToggle = (languageCode: NewsLanguage) => {
     const isSelected = selectedLanguages.includes(languageCode)
+    const language = AVAILABLE_LANGUAGES.find(lang => lang.code === languageCode)
     
     if (isSelected) {
       onLanguagesChange(selectedLanguages.filter(code => code !== languageCode))
+      announceToScreenReader(`Removed ${language?.name || languageCode} from selection`, 'polite')
     } else {
       if (selectedLanguages.length < maxLanguages) {
         onLanguagesChange([...selectedLanguages, languageCode])
+        announceToScreenReader(`Added ${language?.name || languageCode} to selection`, 'polite')
+      } else {
+        announceToScreenReader(`Cannot add ${language?.name || languageCode}. Maximum ${maxLanguages} languages allowed`, 'assertive')
       }
     }
   }
@@ -59,10 +70,10 @@ export default function LanguageSelector({
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 mb-2" id="language-selector-label">
           Select Languages ({selectedLanguages.length}/{maxLanguages})
         </label>
-        <p className="text-sm text-gray-500 mb-4">
+        <p id={helpTextId} className="text-sm text-gray-500 mb-4">
           Choose which languages to search for news articles. 
           Multiple languages will provide broader coverage but may increase loading time.
         </p>
@@ -82,9 +93,11 @@ export default function LanguageSelector({
                 {language.name}
                 <button
                   onClick={() => handleLanguageToggle(language.code)}
-                  className="ml-2 text-lg leading-none hover:bg-blue-200 rounded-full w-5 h-5 flex items-center justify-center"
-                  aria-label={`Remove ${language.name}`}
+                  className="ml-2 text-lg leading-none hover:bg-blue-200 rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                  aria-label={`Remove ${language.name} from selection`}
+                  title={`Remove ${language.name}`}
                   disabled={disabled}
+                  type="button"
                 >
                   ×
                 </button>
@@ -97,11 +110,18 @@ export default function LanguageSelector({
       {/* Language Selection Dropdown */}
       <div className="relative">
         <button
-          onClick={() => setShowDropdown(!showDropdown)}
-          className="w-full px-4 py-3 text-left bg-white border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={() => {
+            const newState = !showDropdown
+            setShowDropdown(newState)
+            announceToScreenReader(`Language selection dropdown ${newState ? 'opened' : 'closed'}`, 'polite')
+          }}
+          className="w-full px-4 py-3 text-left bg-white border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] flex items-center justify-between"
           disabled={disabled || selectedLanguages.length >= maxLanguages}
           aria-expanded={showDropdown}
           aria-haspopup="listbox"
+          aria-controls={dropdownId}
+          aria-describedby={helpTextId}
+          type="button"
         >
           <span className="text-gray-700">
             {selectedLanguages.length >= maxLanguages 
@@ -114,17 +134,29 @@ export default function LanguageSelector({
         </button>
 
         {showDropdown && !disabled && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
+          <div 
+            id={dropdownId}
+            className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-[80vh] sm:max-h-[60vh] flex flex-col"
+            role="listbox"
+            aria-labelledby="language-selector-label"
+          >
             {/* Search and Bulk Actions */}
             <div className="p-3 border-b border-gray-200 space-y-3">
-              {/* Search */}
+              {/* Search with accessibility */}
+              <label htmlFor={searchInputId} className="sr-only">
+                Search available languages
+              </label>
               <input
+                id={searchInputId}
                 type="text"
                 placeholder="Search languages..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 min-h-[40px]"
                 autoFocus
+                autoComplete="off"
+                role="searchbox"
+                aria-label="Search languages"
               />
               
               {/* Bulk Actions */}
@@ -134,17 +166,25 @@ export default function LanguageSelector({
                 </div>
                 <div className="space-x-2">
                   <button
-                    onClick={handleSelectAll}
-                    className="text-xs text-blue-600 hover:text-blue-800 focus:outline-none"
+                    onClick={() => {
+                      handleSelectAll()
+                      announceToScreenReader('Selected popular languages', 'polite')
+                    }}
+                    className="text-xs text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded px-2 py-1 min-h-[44px]"
                     disabled={selectedLanguages.length >= maxLanguages}
+                    type="button"
                   >
                     Select Popular
                   </button>
-                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-300" aria-hidden="true">|</span>
                   <button
-                    onClick={handleClearAll}
-                    className="text-xs text-red-600 hover:text-red-800 focus:outline-none"
+                    onClick={() => {
+                      handleClearAll()
+                      announceToScreenReader('Cleared all language selections', 'polite')
+                    }}
+                    className="text-xs text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 rounded px-2 py-1 min-h-[44px]"
                     disabled={selectedLanguages.length === 0}
+                    type="button"
                   >
                     Clear All
                   </button>
@@ -153,7 +193,7 @@ export default function LanguageSelector({
             </div>
             
             {/* Language List */}
-            <div className="max-h-64 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0">
               {filteredLanguages.length === 0 ? (
                 <div className="px-4 py-8 text-center text-gray-500">
                   No languages match your search
@@ -166,16 +206,19 @@ export default function LanguageSelector({
                   return (
                     <label
                       key={language.code}
-                      className={`flex items-center px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 ${
+                      className={`flex items-center px-3 sm:px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 min-h-[56px] ${
                         isSelected ? 'bg-blue-50' : ''
                       } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      role="option"
+                      aria-selected={isSelected}
                     >
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => !isDisabled && handleLanguageToggle(language.code)}
                         disabled={isDisabled}
-                        className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="mr-3 h-4 w-4 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 border-gray-300 rounded"
+                        aria-describedby={`lang-desc-${language.code}`}
                       />
                       <div className="flex items-center flex-1 min-w-0">
                         <span className="text-2xl mr-3" role="img" aria-label={`${language.name} flag`}>
@@ -185,12 +228,12 @@ export default function LanguageSelector({
                           <div className="font-medium text-gray-900 truncate">
                             {language.name}
                           </div>
-                          <div className="text-sm text-gray-500 truncate">
+                          <div id={`lang-desc-${language.code}`} className="text-sm text-gray-500 truncate">
                             {language.nativeName} ({language.code.toUpperCase()})
                           </div>
                         </div>
                         {isSelected && (
-                          <span className="text-blue-600 ml-2">✓</span>
+                          <span className="text-blue-600 ml-2" aria-hidden="true">✓</span>
                         )}
                       </div>
                     </label>

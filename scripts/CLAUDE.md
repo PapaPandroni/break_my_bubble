@@ -10,6 +10,14 @@ The scripts directory provides:
 - **Build Automation**: Custom build and deployment scripts
 - **Maintenance Scripts**: Database cleanup and data validation
 
+### **Phase 4: Enhanced Build & Development (v3.1)** ✨
+
+Enhanced scripts supporting improved development and deployment:
+- **Accessibility Testing Scripts**: Automated WCAG 2.1 AA compliance validation
+- **Mobile Testing Utilities**: Scripts for testing responsive design and touch interactions
+- **Performance Monitoring**: Enhanced build analysis with UX performance metrics
+- **Error Recovery Testing**: Scripts for testing comprehensive error handling scenarios
+
 ## File Structure
 
 ```

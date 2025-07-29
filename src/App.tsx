@@ -1,25 +1,34 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react'
 import { Article, NewsSource, NewsLanguage, NewsSortBy, AppStep, TopicKeywords } from './types'
 import { DateRange } from './components/DateRangePicker'
-import { NEWS_SOURCES } from './data/newsSources'
-import { TOPICS, TIME_OPTIONS } from './data/topics'
+import { loadNewsSources, loadTopics, preloadCriticalData } from './data/dataLoaders'
+import { TIME_OPTIONS } from './data/topics'
 import { fetchArticlesByTopic, searchAllSources } from './services/newsApiService'
 import { filterAndProcessArticles, getOpposingPerspectives } from './services/filterService'
 import { feedCache } from './services/cacheService'
-import { debugTopicFiltering, debugNewsAPI, debugSourceValidation, debugCacheStatus } from './services/debugService'
+import { debugTopicFiltering, debugNewsAPI, debugSourceValidation, debugCacheStatus, debugRequestOptimization, debugNewsAPIOptimization, debugRequestAnalytics, testRequestOptimization, clearOptimizationCache } from './services/debugService'
 import { getMockArticlesForDemo } from './services/mockDataService'
+import { announceToScreenReader } from './utils/accessibility'
 import { unifiedSourceService } from './services/unifiedSourceService'
 
 // Components
 import Header from './components/Header'
 import LandingPage from './components/LandingPage'
-import TopicSelectionModal from './components/TopicSelectionModal'
 import LoadingState, { ResultsLoadingSkeleton } from './components/LoadingState'
 import { NetworkErrorMessage } from './components/ErrorMessage'
-import ResultsDisplay from './components/ResultsDisplay'
 import ErrorBoundary from './components/ErrorBoundary'
 import ModalErrorBoundary from './components/ModalErrorBoundary'
 import ResultsErrorBoundary from './components/ResultsErrorBoundary'
+import LazyLoadErrorBoundary from './components/LazyLoadErrorBoundary'
+import { TopicSelectionModalSkeleton, ResultsDisplaySkeleton } from './components/LazyLoadingSkeletons'
+
+// Lazy-loaded components
+const TopicSelectionModal = lazy(() => import('./components/TopicSelectionModal'))
+const ResultsDisplay = lazy(() => import('./components/ResultsDisplay'))
+
+// Additional lazy-loaded heavy components could be added here when needed
+// const CountrySelector = lazy(() => import('./components/CountrySelector'))
+// const DateRangePicker = lazy(() => import('./components/DateRangePicker'))
 
 // Helper function to extract keywords from topic based on selected languages
 const extractKeywordsFromTopic = (topicData: TopicKeywords, selectedLanguages: NewsLanguage[]): string[] => {
@@ -79,6 +88,8 @@ interface AppState {
   allSources: NewsSource[] // All sources (unfiltered)
   availableCountries: string[]
   allSourcesLoaded: boolean
+  topics: TopicKeywords[] // Dynamically loaded topics
+  topicsLoaded: boolean
 }
 
 function App() {
@@ -97,10 +108,12 @@ function App() {
     isLoadingSources: false,
     error: null,
     results: null,
-    availableSources: NEWS_SOURCES.map(source => ({ ...source, isDynamic: false })), // Start with static sources immediately
-    allSources: NEWS_SOURCES.map(source => ({ ...source, isDynamic: false })), // Store all sources for filtering
+    availableSources: [], // Will be loaded asynchronously
+    allSources: [], // Store all sources for filtering
     availableCountries: ['us'], // Start with US as most static sources are US-based
     allSourcesLoaded: false, // Will be set to true once dynamic sources are loaded
+    topics: [], // Will be loaded asynchronously
+    topicsLoaded: false, // Will be set to true once topics are loaded
   })
 
   // Memoize expensive calculations
@@ -126,33 +139,46 @@ function App() {
     return unifiedSourceService.getAvailableCountries(state.allSources)
   }, [state.allSources])
 
-  // Initialize sources with optimistic loading
+  // Initialize data with optimistic loading
   useEffect(() => {
-    initializeSourcesOptimistically()
+    initializeDataOptimistically()
   }, [])
 
-  const initializeSourcesOptimistically = async () => {
+  const initializeDataOptimistically = async () => {
+    // Preload critical data in the background
+    preloadCriticalData()
+    
     try {
-      // Get sources with optimistic loading - this returns static sources immediately
-      const { sources, isLoading, loadDynamic } = await unifiedSourceService.getSourcesOptimistic()
+      // Load topics and sources in parallel
+      const [topics, staticSources] = await Promise.all([
+        loadTopics(),
+        loadNewsSources()
+      ])
       
-      // Update state with initial sources (static sources)
+      // Initialize with static sources immediately
+      const sources = staticSources.map((source: any) => ({ ...source, isDynamic: false }))
+      
+      // Update state with initial data
       setState(prev => ({ 
         ...prev, 
+        topics,
+        topicsLoaded: true,
         availableSources: sources,
         allSources: sources,
         availableCountries: unifiedSourceService.getAvailableCountries(sources),
-        isLoadingSources: isLoading,
-        allSourcesLoaded: !isLoading
+        isLoadingSources: true, // Will load dynamic sources next
+        allSourcesLoaded: false
       }))
 
-      // Load dynamic sources in background if needed
-      if (isLoading) {
-        try {
-          const dynamicSources = await loadDynamic()
+      // Load dynamic sources in background
+      try {
+        const { sources: dynamicSources, isLoading, loadDynamic } = await unifiedSourceService.getSourcesOptimistic()
+        
+        if (isLoading) {
+          const fullDynamicSources = await loadDynamic()
           
           // Apply current filters to the new sources
-          const filteredSources = unifiedSourceService.filterSources(dynamicSources, {
+          const filteredSources = unifiedSourceService.filterSources(fullDynamicSources, {
             languages: state.selectedLanguages,
             countries: state.selectedCountries,
             categories: [],
@@ -162,32 +188,43 @@ function App() {
           setState(prev => ({ 
             ...prev, 
             availableSources: filteredSources,
-            allSources: dynamicSources, // Store all sources for filtering
-            availableCountries: unifiedSourceService.getAvailableCountries(dynamicSources),
+            allSources: fullDynamicSources, // Store all sources for filtering
+            availableCountries: unifiedSourceService.getAvailableCountries(fullDynamicSources),
             isLoadingSources: false,
             allSourcesLoaded: true,
             // Preserve selected sources if they're still available
             selectedSources: prev.selectedSources.filter(id => 
-              dynamicSources.some(source => source.id === id)
+              fullDynamicSources.some(source => source.id === id)
             )
           }))
-        } catch (error) {
-          console.warn('Failed to load dynamic sources, keeping static sources:', error)
+        } else {
+          // Use the sources we got immediately
           setState(prev => ({ 
             ...prev, 
+            availableSources: dynamicSources,
+            allSources: dynamicSources,
+            availableCountries: unifiedSourceService.getAvailableCountries(dynamicSources),
             isLoadingSources: false,
-            allSourcesLoaded: true,
-            error: 'Using basic sources. Dynamic sources failed to load.'
+            allSourcesLoaded: true
           }))
         }
+      } catch (error) {
+        console.warn('Failed to load dynamic sources, keeping static sources:', error)
+        setState(prev => ({ 
+          ...prev, 
+          isLoadingSources: false,
+          allSourcesLoaded: true,
+          error: 'Using basic sources. Dynamic sources failed to load.'
+        }))
       }
     } catch (error) {
-      console.error('Failed to initialize sources:', error)
+      console.error('Failed to initialize data:', error)
       setState(prev => ({ 
         ...prev, 
         isLoadingSources: false,
         allSourcesLoaded: true,
-        error: 'Failed to load sources.'
+        topicsLoaded: true,
+        error: 'Failed to load application data.'
       }))
     }
   }
@@ -211,6 +248,8 @@ function App() {
       allSources: prev.allSources, // Keep all sources
       availableCountries: prev.availableCountries, // Keep available countries
       allSourcesLoaded: prev.allSourcesLoaded, // Keep loading status
+      topics: prev.topics, // Keep loaded topics
+      topicsLoaded: prev.topicsLoaded, // Keep topics loading status
     }))
   }, [])
 
@@ -235,6 +274,13 @@ function App() {
         )
       }
     })
+    
+    // Announce language changes to screen readers
+    const languageCount = languages.length
+    const message = languageCount === 0 
+      ? 'Removed all language filters'
+      : `Selected ${languageCount} language${languageCount === 1 ? '' : 's'} for filtering`
+    announceToScreenReader(message, 'polite')
   }, [])
 
   const handleCountriesChange = useCallback((countries: string[]) => {
@@ -256,6 +302,13 @@ function App() {
         )
       }
     })
+    
+    // Announce country changes to screen readers
+    const countryCount = countries.length
+    const message = countryCount === 0 
+      ? 'Removed all country filters'
+      : `Selected ${countryCount} countr${countryCount === 1 ? 'y' : 'ies'} for filtering`
+    announceToScreenReader(message, 'polite')
   }, [])
 
   const handleDateRangeChange = useCallback((dateRange: DateRange) => {
@@ -264,19 +317,30 @@ function App() {
 
   const handleSortChange = useCallback((sort: NewsSortBy) => {
     setState(prev => ({ ...prev, selectedSort: sort }))
+    
+    // Announce sort changes to screen readers
+    const sortLabels = {
+      'relevancy': 'relevancy',
+      'publishedAt': 'newest first',
+      'popularity': 'popularity'
+    }
+    announceToScreenReader(`Sort changed to ${sortLabels[sort]}`, 'polite')
   }, [])
 
   // Step navigation handlers
   const handleContinueToModal = () => {
     setState(prev => ({ ...prev, currentStep: 'modal' }))
+    announceToScreenReader('Opened topic selection modal. Choose your topic and filters.', 'polite')
   }
 
   const handleBackToLanding = () => {
     setState(prev => ({ ...prev, currentStep: 'landing' }))
+    announceToScreenReader('Returned to landing page. Select your news sources to continue.', 'polite')
   }
 
   const handleStartAnalysis = () => {
     setState(prev => ({ ...prev, currentStep: 'results' }))
+    announceToScreenReader('Starting analysis. Please wait while we find articles and opposing perspectives.', 'polite')
     handleAnalyze()
   }
 
@@ -292,7 +356,7 @@ function App() {
 
     try {
         // Get selected topic data (handle Custom Search case)
-        let topicData = TOPICS.find(t => t.topic === state.selectedTopic)
+        let topicData = state.topics.find(t => t.topic === state.selectedTopic)
         if (!topicData && state.selectedTopic === 'Custom Search') {
           // Create synthetic topic data for custom search
           topicData = {
@@ -519,39 +583,50 @@ function App() {
         )}
 
         {/* Step 2: Topic Selection Modal */}
-        <ModalErrorBoundary
-          onClose={handleBackToLanding}
-          modalTitle="Topic Selection"
-          onError={(error, errorInfo) => {
-            console.error('Topic Selection Modal Error:', error, errorInfo)
-          }}
-        >
-          <TopicSelectionModal
-            topics={TOPICS}
-            selectedTopic={state.selectedTopic}
-            onTopicChange={(topic) => 
-              setState(prev => ({ ...prev, selectedTopic: topic }))
-            }
-            customSearchTerms={state.customSearchTerms}
-            onCustomSearchTermsChange={(terms) =>
-              setState(prev => ({ ...prev, customSearchTerms: terms }))
-            }
-            selectedLanguages={state.selectedLanguages}
-            onLanguagesChange={handleLanguagesChange}
-            selectedCountries={state.selectedCountries}
-            onCountriesChange={handleCountriesChange}
-            availableCountries={availableCountries}
-            selectedSort={state.selectedSort}
-            onSortChange={handleSortChange}
-            selectedDateRange={state.selectedDateRange}
-            onDateRangeChange={handleDateRangeChange}
-            timeOptions={TIME_OPTIONS}
-            isOpen={state.currentStep === 'modal'}
+        {state.currentStep === 'modal' && (
+          <ModalErrorBoundary
             onClose={handleBackToLanding}
-            onAnalyze={handleStartAnalysis}
-            isLoading={state.isLoading}
-          />
-        </ModalErrorBoundary>
+            modalTitle="Topic Selection"
+            onError={(error, errorInfo) => {
+              console.error('Topic Selection Modal Error:', error, errorInfo)
+            }}
+          >
+            <LazyLoadErrorBoundary
+              componentName="TopicSelectionModal"
+              onError={(error, errorInfo) => {
+                console.error('Lazy Load Error - TopicSelectionModal:', error, errorInfo)
+              }}
+            >
+              <Suspense fallback={<TopicSelectionModalSkeleton />}>
+                <TopicSelectionModal
+                topics={state.topics}
+                selectedTopic={state.selectedTopic}
+                onTopicChange={(topic) => 
+                  setState(prev => ({ ...prev, selectedTopic: topic }))
+                }
+                customSearchTerms={state.customSearchTerms}
+                onCustomSearchTermsChange={(terms) =>
+                  setState(prev => ({ ...prev, customSearchTerms: terms }))
+                }
+                selectedLanguages={state.selectedLanguages}
+                onLanguagesChange={handleLanguagesChange}
+                selectedCountries={state.selectedCountries}
+                onCountriesChange={handleCountriesChange}
+                availableCountries={availableCountries}
+                selectedSort={state.selectedSort}
+                onSortChange={handleSortChange}
+                selectedDateRange={state.selectedDateRange}
+                onDateRangeChange={handleDateRangeChange}
+                timeOptions={TIME_OPTIONS}
+                isOpen={state.currentStep === 'modal'}
+                onClose={handleBackToLanding}
+                onAnalyze={handleStartAnalysis}
+                isLoading={state.isLoading}
+                />
+              </Suspense>
+            </LazyLoadErrorBoundary>
+          </ModalErrorBoundary>
+        )}
 
         {/* Step 3: Results Display */}
         {state.currentStep === 'results' && (
@@ -567,7 +642,15 @@ function App() {
               >
                 <div className="mt-12">
                   <LoadingState 
-                    message="Fetching articles from news sources..." 
+                    message="Analyzing news sources and finding articles..." 
+                    variant="detailed"
+                    steps={[
+                      'Searching user-selected sources',
+                      'Finding opposing perspectives',
+                      'Processing and filtering articles',
+                      'Organizing results by political lean'
+                    ]}
+                    currentStep={0}
                   />
                   <div className="mt-8">
                     <ResultsLoadingSkeleton />
@@ -579,7 +662,7 @@ function App() {
             {/* Error State */}
             {state.error && (
               <div className="mt-12">
-                <NetworkErrorMessage onRetry={handleAnalyze} />
+                <NetworkErrorMessage onRetry={handleAnalyze} onReset={handleReset} />
               </div>
             )}
 
@@ -595,12 +678,21 @@ function App() {
                 }}
               >
                 <section>
-                  <ResultsDisplay
-                    userArticles={state.results.userArticles}
-                    opposingArticles={state.results.opposingArticles}
-                    topic={state.selectedTopic}
-                    userSources={state.selectedSources}
-                  />
+                  <LazyLoadErrorBoundary
+                    componentName="ResultsDisplay"
+                    onError={(error, errorInfo) => {
+                      console.error('Lazy Load Error - ResultsDisplay:', error, errorInfo)
+                    }}
+                  >
+                    <Suspense fallback={<ResultsDisplaySkeleton />}>
+                      <ResultsDisplay
+                      userArticles={state.results.userArticles}
+                      opposingArticles={state.results.opposingArticles}
+                      topic={state.selectedTopic}
+                      userSources={state.selectedSources}
+                      />
+                    </Suspense>
+                  </LazyLoadErrorBoundary>
                 </section>
               </ResultsErrorBoundary>
             )}
@@ -620,7 +712,7 @@ function App() {
                 <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600 bg-white px-3 py-2 rounded-lg shadow">
                   Dev Tools
                 </summary>
-                <div className="mt-2 grid grid-cols-2 gap-1 bg-white p-2 rounded-lg shadow-lg">
+                <div className="mt-2 grid grid-cols-3 gap-1 bg-white p-2 rounded-lg shadow-lg max-w-sm">
                   <button
                     onClick={() => {
                       console.log('🔧 Running topic filter debug...')
@@ -672,10 +764,10 @@ function App() {
                       const demoArticles = getMockArticlesForDemo()
                       console.log(`Got ${demoArticles.length} demo articles`)
                       
-                      const topicData = TOPICS.find(t => t.topic === 'Climate Change')
+                      const topicData = state.topics.find(t => t.topic === 'Climate Change')
                       if (topicData) {
                         const filtered = filterAndProcessArticles(demoArticles, topicData, 7, 'publishedAt', 20)
-                        const cnnSource = NEWS_SOURCES.find(s => s.id === 'cnn')
+                        const cnnSource = state.allSources.find(s => s.id === 'cnn')
                         const { userArticles, opposingArticles } = getOpposingPerspectives(cnnSource ? [cnnSource] : [], filtered, 'publishedAt')
                         
                         setState(prev => ({
@@ -690,6 +782,51 @@ function App() {
                     className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
                   >
                     Demo
+                  </button>
+                  <button
+                    onClick={() => {
+                      console.log('🚀 Running request optimization debug...')
+                      debugRequestOptimization()
+                    }}
+                    className="px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600"
+                  >
+                    Req Opt
+                  </button>
+                  <button
+                    onClick={() => {
+                      console.log('📡 Running NewsAPI optimization debug...')
+                      debugNewsAPIOptimization()
+                    }}
+                    className="px-2 py-1 text-xs bg-teal-500 text-white rounded hover:bg-teal-600"
+                  >
+                    API Opt
+                  </button>
+                  <button
+                    onClick={() => {
+                      console.log('📊 Generating request analytics report...')
+                      debugRequestAnalytics()
+                    }}
+                    className="px-2 py-1 text-xs bg-pink-500 text-white rounded hover:bg-pink-600"
+                  >
+                    Analytics
+                  </button>
+                  <button
+                    onClick={async () => {
+                      console.log('🧪 Testing request optimization system...')
+                      await testRequestOptimization()
+                    }}
+                    className="px-2 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                  >
+                    Test Opt
+                  </button>
+                  <button
+                    onClick={() => {
+                      console.log('🧹 Clearing optimization cache...')
+                      clearOptimizationCache()
+                    }}
+                    className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                  >
+                    Clear Opt
                   </button>
                 </div>
               </details>

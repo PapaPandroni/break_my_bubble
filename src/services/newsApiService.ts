@@ -1,5 +1,6 @@
 import { Article, NewsSource, NewsAPIResponse, NewsAPIArticle, NewsLanguage, NewsSortBy, PaginatedResults } from '../types';
 import { NEWS_SOURCES } from '../data/newsSources';
+import { newsApiOptimizer } from './newsApiOptimizer';
 
 export class NewsAPIError extends Error {
   constructor(
@@ -13,7 +14,7 @@ export class NewsAPIError extends Error {
 }
 
 const API_KEY = import.meta.env.VITE_NEWS_API_KEY;
-const BASE_URL = 'https://newsapi.org/v2';
+// Note: BASE_URL removed as we now use newsApiOptimizer
 
 // Validate API key on module load
 if (!API_KEY) {
@@ -32,14 +33,15 @@ const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
 // Remove static source maps - now using dynamic source data passed from unifiedSourceService
 
-// Fetch available NewsAPI sources
+// Fetch available NewsAPI sources with optimization
 export async function fetchAvailableNewsAPISources(): Promise<Set<string>> {
   try {
     if (!API_KEY) {
       throw new Error('NewsAPI key is required but not configured in environment variables');
     }
 
-    const response = await fetch(`${BASE_URL}/top-headlines/sources?apiKey=${API_KEY}`);
+    const params = new URLSearchParams();
+    const response = await newsApiOptimizer.fetchSources(params, 'high', 'sources:all');
     
     if (!response.ok) {
       console.warn('Failed to fetch NewsAPI sources, using cached or defaults');
@@ -137,7 +139,7 @@ async function fetchArticlesByTopicWithoutSources(
     params.append('excludeDomains', excludeDomains.join(','));
   }
   
-  const response = await fetch(`${BASE_URL}/everything?${params}`);
+  const response = await newsApiOptimizer.fetchEverything(params, 'medium', `fallback:${keywords.join(',')}`);
   
   if (!response.ok) {
     throw new NewsAPIError(`Fallback NewsAPI request failed with status ${response.status}`, 'fallbackFailed', response.status);
@@ -234,25 +236,26 @@ export async function fetchArticlesByTopic(
       }
     }
     
-    const response = await fetch(`${BASE_URL}/everything?${params}`);
+    // Create cache key based on request parameters
+    const cacheKey = `everything:${topic}:${sources.join(',')}:${page}:${pageSize}`;
     
-    if (response.status === 429) {
-      throw new NewsAPIError('Rate limit exceeded. Please try again later.', 'rateLimited', 429);
-    }
-    if (response.status === 401) {
-      throw new NewsAPIError('Invalid API key. Please check your configuration.', 'unauthorized', 401);
-    }
-    if (response.status === 400) {
-      const errorData = await response.json().catch(() => ({}));
-      if (errorData.message?.includes('source')) {
-        console.warn('Source-related error, attempting fallback without specific sources');
-        // Retry without sources parameter
-        return await fetchArticlesByTopicWithoutSources(topic, keywords, timeframeDays, availableSources, languages, sortBy, domains, excludeDomains, page, pageSize);
+    let response: Response;
+    try {
+      response = await newsApiOptimizer.fetchEverything(params, 'high', cacheKey);
+      
+      if (!response.ok) {
+        throw new NewsAPIError(`NewsAPI request failed with status ${response.status}`, 'requestFailed', response.status);
       }
-      throw new NewsAPIError(errorData.message || 'Bad request to NewsAPI', 'badRequest', 400);
-    }
-    if (!response.ok) {
-      throw new NewsAPIError(`NewsAPI request failed with status ${response.status}`, 'requestFailed', response.status);
+    } catch (error) {
+      if (error instanceof NewsAPIError) {
+        // Handle specific error cases with fallback
+        if (error.code === 'badRequest' && error.message?.includes('source')) {
+          console.warn('Source-related error, attempting fallback without specific sources');
+          return await fetchArticlesByTopicWithoutSources(topic, keywords, timeframeDays, availableSources, languages, sortBy, domains, excludeDomains, page, pageSize);
+        }
+        throw error;
+      }
+      throw new NewsAPIError(`Request failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'requestFailed');
     }
     
     const data: NewsAPIResponse = await response.json();
@@ -361,14 +364,11 @@ export async function searchAllSources(
       params.append('excludeDomains', excludeDomains.join(','));
     }
     
-    const response = await fetch(`${BASE_URL}/everything?${params}`);
+    // Create cache key for search all sources
+    const cacheKey = `searchAll:${keywords.join(',')}:${page}:${pageSize}`;
     
-    if (response.status === 429) {
-      throw new NewsAPIError('Rate limit exceeded. Please try again later.', 'rateLimited', 429);
-    }
-    if (response.status === 401) {
-      throw new NewsAPIError('Invalid API key. Please check your configuration.', 'unauthorized', 401);
-    }
+    const response = await newsApiOptimizer.fetchEverything(params, 'medium', cacheKey);
+    
     if (!response.ok) {
       throw new NewsAPIError(`NewsAPI request failed with status ${response.status}`, 'requestFailed', response.status);
     }
@@ -404,22 +404,16 @@ export async function searchAllSources(
   }
 }
 
-// Check API key validity and remaining requests
+// Check API key validity and remaining requests using optimized endpoint
 export async function checkAPIStatus(): Promise<{
   valid: boolean;
   remaining?: number;
   limit?: number;
+  resetTime?: Date;
 }> {
   try {
-    const response = await fetch(`${BASE_URL}/top-headlines?country=us&apiKey=${API_KEY}`);
-    const remaining = response.headers.get('X-RateLimit-Remaining');
-    const limit = response.headers.get('X-RateLimit-Limit');
-    
-    return {
-      valid: response.ok,
-      remaining: remaining ? parseInt(remaining) : undefined,
-      limit: limit ? parseInt(limit) : undefined
-    };
+    const status = await newsApiOptimizer.checkStatus();
+    return status;
   } catch (error) {
     return { valid: false };
   }

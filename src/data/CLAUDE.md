@@ -12,6 +12,14 @@ The data directory provides:
 - **Reference Data**: Structured data for consistent application behavior
 - **Dynamic Source Fallbacks**: Stable fallback data when dynamic source fetching fails
 
+### **Phase 4: UX Data Enhancements (v3.1)** ✨
+
+Enhanced data configurations supporting improved user experience:
+- **Accessibility Labels**: Predefined ARIA labels and screen reader announcements
+- **Mobile-Responsive Data**: Touch target sizes and responsive breakpoint configurations
+- **Error Message Templates**: Structured error messages with recovery step guidance
+- **Loading State Configurations**: Progress indicator steps and loading message templates
+
 ## File Structure
 
 ```

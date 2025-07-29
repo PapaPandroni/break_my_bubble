@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
 import { NewsSource } from '../types'
-import { getPoliticalLeanColor, getPoliticalLeanLabel } from '../utils/politicalLean'
 import { getCredibilityIndicator, getCategoryIcon } from '../utils/sourceUtils'
 
 interface SourceInputProps {
@@ -84,7 +83,7 @@ export default function SourceInput({
               return (
                 <span
                   key={source.id}
-                  className={`inline-flex items-center px-4 py-2 rounded-2xl text-sm font-medium border-2 transition-all duration-200 hover:scale-105 ${getPoliticalLeanColor(source.politicalLean)}`}
+                  className="inline-flex items-center px-4 py-2 rounded-2xl text-sm font-medium border-2 bg-white text-gray-700 border-gray-200 hover:border-primary-300 hover:bg-primary-25 transition-all duration-200 hover:scale-105"
                 >
                   <span className="flex items-center gap-2">
                     {source.category && (
@@ -227,9 +226,6 @@ export default function SourceInput({
                           )}
                         </div>
                         <div className="flex items-center space-x-2 ml-2">
-                          <span className={`px-2 py-1 text-xs rounded-full border ${getPoliticalLeanColor(source.politicalLean)}`}>
-                            {getPoliticalLeanLabel(source.politicalLean)}
-                          </span>
                           {isSelected && (
                             <span className="text-blue-600">✓</span>
                           )}

@@ -202,9 +202,11 @@ export default function CountrySelector({
                 {country.name}
                 <button
                   onClick={() => handleCountryToggle(country.code)}
-                  className="ml-2 text-lg leading-none hover:bg-blue-200 rounded-full w-5 h-5 flex items-center justify-center"
+                  className="ml-2 text-lg leading-none hover:bg-blue-200 rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
                   aria-label={`Remove ${country.name}`}
+                  title={`Remove ${country.name}`}
                   disabled={disabled}
+                  type="button"
                 >
                   ×
                 </button>
@@ -236,7 +238,7 @@ export default function CountrySelector({
         </button>
 
         {showDropdown && !disabled && availableCountries.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
+          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-[80vh] sm:max-h-[60vh] flex flex-col">
             {/* Search and Bulk Actions */}
             <div className="p-3 border-b border-gray-200 space-y-3">
               {/* Search */}
@@ -257,16 +259,18 @@ export default function CountrySelector({
                 <div className="space-x-2">
                   <button
                     onClick={handleSelectPopular}
-                    className="text-xs text-blue-600 hover:text-blue-800 focus:outline-none"
+                    className="text-xs text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded px-2 py-1 min-h-[44px]"
                     disabled={selectedCountries.length >= maxCountries}
+                    type="button"
                   >
                     Select Popular
                   </button>
-                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-300" aria-hidden="true">|</span>
                   <button
                     onClick={handleClearAll}
-                    className="text-xs text-red-600 hover:text-red-800 focus:outline-none"
+                    className="text-xs text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 rounded px-2 py-1 min-h-[44px]"
                     disabled={selectedCountries.length === 0}
+                    type="button"
                   >
                     Clear All
                   </button>
@@ -275,7 +279,7 @@ export default function CountrySelector({
             </div>
             
             {/* Country List */}
-            <div className="max-h-64 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0">
               {filteredCountries.length === 0 ? (
                 <div className="px-4 py-8 text-center text-gray-500">
                   No countries match your search
@@ -289,7 +293,7 @@ export default function CountrySelector({
                   return (
                     <label
                       key={countryCode}
-                      className={`flex items-center px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 ${
+                      className={`flex items-center px-3 sm:px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 min-h-[56px] ${
                         isSelected ? 'bg-blue-50' : ''
                       } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >

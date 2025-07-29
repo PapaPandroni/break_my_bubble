@@ -61,17 +61,17 @@ export default function LandingPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
-      <main className="max-w-4xl mx-auto px-4">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="min-h-[80vh] flex flex-col justify-center">
           {/* Simplified Layout with Better Spacing */}
-          <div className="max-w-3xl mx-auto w-full space-y-8">
+          <div className="max-w-3xl mx-auto w-full space-y-6 sm:space-y-8">
             {/* Main Content */}
-            <div className="text-center space-y-8">
-              <div className="space-y-4">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
+            <div className="text-center space-y-6 sm:space-y-8">
+              <div className="space-y-3 sm:space-y-4">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
                   Choose your news sources
                 </h1>
-                <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-medium">
+                <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-medium px-2 sm:px-0">
                   Select the news outlets you trust, and we'll show you how other sources cover the same stories
                 </p>
               </div>
@@ -80,16 +80,13 @@ export default function LandingPage({
               <div className="max-w-2xl mx-auto">
                 <div className="relative">
                   {/* Main selection card with colored border and background */}
-                  <div className="relative bg-primary-25 rounded-2xl shadow-medium border-2 border-primary-300 p-6 transition-all duration-300 hover:shadow-strong hover:border-primary-400">
-                    <div className="space-y-4">
+                  <div className="relative bg-primary-25 rounded-2xl shadow-medium border-2 border-primary-300 p-4 sm:p-6 transition-all duration-300 hover:shadow-strong hover:border-primary-400">
+                    <div className="space-y-3 sm:space-y-4">
                       <div className="text-center space-y-2">
                         <div className="inline-flex items-center px-3 py-1.5 bg-primary-200 rounded-full">
                           <span className="w-2 h-2 bg-primary-600 rounded-full mr-2"></span>
                           <span className="text-primary-800 font-medium text-sm">Step 1</span>
                         </div>
-                        <h2 className="text-lg font-semibold text-gray-900">
-                          Select News Sources
-                        </h2>
                       </div>
                       
                       <SourceInput
@@ -103,7 +100,7 @@ export default function LandingPage({
                       />
                       
                       {/* Filter Panel - beneath source selection as requested */}
-                      <div className="pt-6 border-t border-gray-100 mt-6">
+                      <div className="pt-4 sm:pt-6 border-t border-gray-100 mt-4 sm:mt-6">
                         <FilterPanel
                           selectedLanguages={selectedLanguages}
                           onLanguagesChange={onLanguagesChange}
@@ -128,7 +125,7 @@ export default function LandingPage({
               <button
                 onClick={handleContinue}
                 disabled={!canContinue}
-                className={`px-8 py-3 text-lg font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 focus:ring-offset-2 ${
+                className={`px-6 sm:px-8 py-3 text-base sm:text-lg font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 focus:ring-offset-2 w-full sm:w-auto min-h-[56px] ${
                   canContinue
                     ? 'bg-gradient-to-r from-primary-600 to-secondary-600 text-white hover:from-primary-700 hover:to-secondary-700 shadow-medium hover:shadow-strong'
                     : 'bg-gray-200 text-gray-500 cursor-not-allowed shadow-soft'
@@ -140,14 +137,14 @@ export default function LandingPage({
             </div>
 
             {/* FAQ Section */}
-            <div className="border-t border-gray-100 pt-8">
-              <div className="bg-white rounded-xl shadow-soft border border-gray-50 p-6">
+            <div className="border-t border-gray-100 pt-6 sm:pt-8">
+              <div className="bg-white rounded-xl shadow-soft border border-gray-50 p-4 sm:p-6">
                 <FAQ className="max-w-2xl mx-auto" />
               </div>
             </div>
 
             {/* Bottom spacing for mobile */}
-            <div className="h-8"></div>
+            <div className="h-6 sm:h-8"></div>
           </div>
         </div>
       </main>

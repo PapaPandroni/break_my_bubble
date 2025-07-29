@@ -2,16 +2,28 @@
 
 A sophisticated news analysis web application with a streamlined three-step interface that helps users discover opposing perspectives. Built on a "show, don't tell" design philosophy, the app features refined UI/UX with enhanced consistency while maintaining comprehensive NewsAPI integration and multilanguage support.
 
-![BreakMyBubble](https://img.shields.io/badge/Version-2.4-blue) ![BreakMyBubble](https://img.shields.io/badge/Status-Production%20Ready-green) ![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue) ![NewsAPI](https://img.shields.io/badge/NewsAPI-Integrated-orange)
+![BreakMyBubble](https://img.shields.io/badge/Version-2.5-blue) ![BreakMyBubble](https://img.shields.io/badge/Status-Production%20Ready-green) ![Security](https://img.shields.io/badge/Security-Hardened-red) ![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue) ![NewsAPI](https://img.shields.io/badge/NewsAPI-Integrated-orange)
 
-## 🎨 Latest Updates (v2.4)
+## 🔒 Latest Updates (v2.5) - Security & Quality Hardening
 
-### UI/UX Enhancements
-- **Header Consistency**: Integrated "Discover opposing perspectives" subtitle directly in header for unified branding
-- **Refined Landing Page**: Improved visual hierarchy with optimized typography and spacing
-- **Enhanced Source Selection**: Color/shape emphasis (primary blue borders and backgrounds) instead of oversized elements
-- **Content Accuracy**: Updated FAQ from misleading "80,000+ sources" to honest "130+ curated sources"
-- **Streamlined Interface**: Removed duplicate elements and fixed modal organization issues
+### Major Security Enhancements
+- **🔒 Input Sanitization**: DOMPurify integration for secure HTML content processing
+- **🚫 XSS Protection**: Comprehensive protection against cross-site scripting attacks
+- **🔗 URL Security**: Enhanced validation and sanitization for all external links
+- **🔒 Content Security Policy**: Full CSP implementation with security headers
+- **🔑 API Security**: Enhanced validation and secure environment variable management
+
+### Critical Code Quality Fixes
+- **📊 Memory Leak Prevention**: Fixed component cleanup and event listener issues
+- **♾️ Stale Closure Resolution**: Eliminated infinite re-render bugs and performance issues
+- **✅ Type Safety**: 100% TypeScript compliance with proper type guards
+- **⚡ Performance**: Optimized component lifecycle and callback memoization
+- **📊 React Best Practices**: Enhanced hook patterns and dependency management
+
+### Previous UI/UX Enhancements (v2.4)
+- **Header Consistency**: Integrated "Discover opposing perspectives" subtitle for unified branding
+- **Refined Interface**: Improved visual hierarchy and streamlined user experience
+- **Content Accuracy**: Updated to reflect actual capabilities (130+ curated sources)
 
 ## 🌟 Key Features
 
@@ -101,12 +113,16 @@ Access at `http://localhost:5173` - Works immediately with RSS feeds!
    npm run dev
    ```
 
-**⚠️ SECURITY WARNING**: 
-- **NEVER commit your `.env` file to version control**
-- API keys in client-side applications are visible to users
-- For production use, consider implementing a backend proxy to hide API keys
-- The current implementation includes input sanitization and URL validation for security
-4. **Enjoy Full Features**: Multi-language, 54 countries, advanced filtering!
+**🔒 ENHANCED SECURITY (v2.5)**: 
+- **✅ Input Sanitization**: DOMPurify protection against XSS attacks
+- **✅ Content Security Policy**: Comprehensive CSP headers for production security
+- **✅ URL Validation**: Secure handling of all external links and images
+- **✅ API Security**: Enhanced validation and error handling
+- **✅ Memory Safety**: Prevents memory leaks and performance issues
+- **⚠️ Environment Security**: NEVER commit .env files to version control
+- **⚠️ API Key Visibility**: Client-side keys are visible; consider backend proxy for production
+
+4. **Enjoy Secure Features**: Multi-language, 54 countries, advanced filtering with enterprise-grade security!
 
 ## 🏗️ Production Deployment
 
@@ -125,6 +141,14 @@ VITE_NEWS_API_KEY=your_production_api_key
 # Optional configurations
 VITE_DEBUG_MODE=false  # Disable debug features
 ```
+
+### 🔒 Production Security Checklist
+- ✅ **Environment Variables**: Securely managed, never committed to VCS
+- ✅ **Content Security Policy**: Comprehensive CSP headers implemented
+- ✅ **Input Sanitization**: DOMPurify protection against XSS
+- ✅ **URL Validation**: Secure handling of external content
+- ✅ **Memory Management**: Leak-free component lifecycle
+- ✅ **Type Safety**: 100% TypeScript compliance for runtime safety
 
 ### Deployment Platforms
 - **Netlify**: Automatic deployment from Git with environment variables
@@ -228,6 +252,8 @@ When `NODE_ENV=development`, access debug tools:
 - Topic filtering analysis
 - Cache management
 - Source validation status
+- **NEW**: Security validation and XSS protection testing
+- **NEW**: Memory leak detection and component lifecycle monitoring
 
 ### Scripts & Automation
 ```bash
@@ -256,13 +282,22 @@ node scripts/validate-sources.js       # Validate RSS feeds
 - **Political Lean Classification** adapted for international media
 - **Cultural Context** awareness in source categorization
 
-## 🔐 Privacy & Ethics
+## 🔒 Security & Privacy
+
+### Enhanced Security (v2.5)
+- **🚫 XSS Protection**: DOMPurify sanitization prevents malicious script injection
+- **🔗 URL Security**: Comprehensive validation of all external links and images
+- **🔒 Content Security Policy**: Full CSP implementation with security headers
+- **📊 Memory Safety**: Prevents memory leaks and performance degradation
+- **✅ Type Safety**: 100% TypeScript compliance eliminates runtime errors
+- **🔑 API Security**: Enhanced validation and secure error handling
 
 ### Data Privacy
 - **No User Tracking**: Stateless application with no personal data collection
 - **Local Storage Only**: Cache data stays on user's device
 - **No Analytics**: Privacy-first approach with no third-party tracking
 - **Open Source**: Full transparency in data handling
+- **Secure by Design**: Built-in protection against common web vulnerabilities
 
 ### Editorial Standards  
 - **Bias Transparency**: Clear political lean classifications with sources
@@ -335,14 +370,15 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 *"The best way to break your news bubble is to actively seek diverse perspectives and think critically about all sources of information."*
 
-**Version 3.0** - 3-Phase Modal-Based UI Architecture ✨  
+**Version 2.5** - Security & Quality Hardening ✨  
 **Last Updated**: July 2025
 
-**Key Changes in v3.0:**
-- Complete UI restructure with 3-phase flow ('landing' → 'modal' → 'results')
-- Full-screen modal interface for topic selection with advanced accessibility
-- Comprehensive error boundary system with phase-specific error handling
-- Google-inspired landing page design with streamlined user experience
-- Enhanced focus management and keyboard navigation throughout
+**Key Changes in v2.5:**
+- 🔒 **Comprehensive Security**: Input sanitization, XSS protection, CSP implementation
+- 📊 **Memory Leak Fixes**: Complete component cleanup and event listener management
+- ♾️ **Performance Optimization**: Resolved stale closure bugs and infinite re-renders
+- ✅ **Type Safety**: Enhanced TypeScript compliance with proper type guards
+- 🔑 **API Security**: Enhanced validation and secure environment management
+- 📊 **React Best Practices**: Fixed useEffect dependencies and hook patterns
 
-*Previous versions: v2.3 (API-Only Architecture), v2.1 (International Sources)*
+*Previous versions: v2.4 (UI/UX Enhancements), v2.3 (API-Only Architecture), v2.1 (International Sources)*
